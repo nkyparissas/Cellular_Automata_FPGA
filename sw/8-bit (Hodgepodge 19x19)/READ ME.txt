@@ -1,0 +1,2 @@
+We are yet to find an initial seed that leads to auto-organization. 
+grid_custom works for G = 47 ... 60, G = 60 converges. 
