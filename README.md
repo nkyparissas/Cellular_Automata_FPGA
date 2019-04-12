@@ -1,7 +1,7 @@
-# A Parallel Framework for Simulating Large-Neighborhood Cellular Automata on Reconfigurable Logic
+## A Parallel Framework for Simulating Large-Neighborhood Cellular Automata on Reconfigurable Logic
 Instructions coming up soon! Synthesized with vivado 2018.1 for Nexys 4 DDR board. 
 
-#### Initialization
+### Initialization
 
 An initial configuration of the automaton's grid, also commonly known as the cellular automaton's initial state, is required in order for a cellular automaton to begin its operation. This initial state is set by assigning a state for each cell of the grid. 
 
