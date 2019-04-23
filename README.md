@@ -14,7 +14,7 @@ An initial configuration of the automaton's grid, also commonly known as the cel
 
 As far as our design is concerned, the preparation of the grid's initial configuration must be prepared in the host computer before our system begins its operation. Due to the fact that this is a one-person project focusing on hardware design, the process designed for this task consists of a few basic scripts and programs instead of developing a complete software suite with a graphical user interface. This process, which is shown in the figure below and described later in full detail, comprises a simple yet efficient and ubiquitous way for preparing an initial configuration for our system.
 
-![](manual_figs/00_initialization.png) 
+![](readme_figs/00_initialization.png) 
 
 The first step of the process is to prepare a bitmap image of the initial state of the automaton's grid. A bitmap image is a suitable way of representing the grid for two reasons. First, it constitutes a visual way of representing the grid's data which helps the user have a complete view of the grid after every modification, no matter how major or minor that is. Second, bitmap image pixels can be represented by a variable number of bits per pixel. This feature is convenient for us, as there can be a direct match between pixels of 4 bits (16 colors) and 4-bit grid cells, or between pixels of 8 bits (256 colors) and 8-bit grid cells.
 
