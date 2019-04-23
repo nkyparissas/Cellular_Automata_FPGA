@@ -6,6 +6,8 @@ A detailed description of the design's operation can be found in the thesis' tex
 
 The example projects found in this repository were synthesized and implemented with the use of *Vivado 2018.1* for *Digilent's Nexys 4 DDR* board which features *Artix 7* FPGA from *Xilinx*. The netlist constraints uploaded in this repository concern *Nexys 4 DDR*. In case the user wants to use a different board, different netlist constraints must be used.  
 
+While Vivado's default settings are more than capable of implementing this design for simple cellular automata, complex rules which might be pushing your FPGA's capabilities to the edge require different settings: *Flow_PerfOptimized_high* for synthesis and *Performance_ExtraTimingOpt* for implementation (placement and routing). In case several timing constraints are not recognized, try performing synthesis without hierarchy flattening. 
+
 ### Initialization
 
 An initial configuration of the automaton's grid, also commonly known as the cellular automaton's initial state, is required in order for a cellular automaton to begin its operation. This initial state is set by assigning a state for each cell of the grid. 
