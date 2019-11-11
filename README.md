@@ -6,7 +6,7 @@ A detailed description of the design's operation can be found in the thesis' tex
 
 The example projects found in this repository were synthesized and implemented with the use of *Vivado 2018.1* for *Digilent's Nexys 4 DDR* board which features *Artix 7* FPGA from *Xilinx*. The netlist constraints uploaded in this repository concern *Nexys 4 DDR*. In case the user wants to use a different board, different netlist constraints must be used.  
 
-While Vivado's default settings are more than capable of implementing this design for simple cellular automata, complex rules which might be pushing your FPGA's capabilities to the edge require *Performance_Explore* or *Performance_ExtraTimingOpt* for implementation (placement and routing). In case several timing constraints are not recognized, try performing synthesis without hierarchy flattening. 
+While *Vivado*'s default settings are more than capable of implementing this design for simple cellular automata, complex rules which might be pushing your FPGA's capabilities to the edge require *Performance_Explore* or *Performance_ExtraTimingOpt* for implementation (placement and routing). In case several timing constraints are not recognized, try performing synthesis without hierarchy flattening. 
 
 ### Initialization
 
@@ -22,6 +22,6 @@ Any image editing software which can handle bitmap files will do for the task. A
 
 Once the bitmap image of the grid is complete, a Matlab script transforms the image into a delimited text file which contains space-separated pixel values. Every text line represents a different row of the image. 
 
-An executable running in *Microsoft Windows* handles the UART connection between the host computer and the FPGA board and transfers the text file to our system via USB at a rate of 2 MBd. The file transfer time depends on the cell's size in bits, since we can pack either one or two cells per byte being transmitted. A grid which consists of 8-bit cells takes up to 10 seconds to be transmitted, while transmitting a 4-bit cells grid takes up half the time. 
+An executable running in *Microsoft Windows* handles the UART connection between the host computer and the FPGA board and transfers the text file to our system via USB at a rate of 2 MBd. The file transfer time depends on the cell's size in bits, since we can pack either one or two cells per byte being transmitted. A grid consisting of 8-bit cells takes up to 10 seconds to be transmitted, while transmitting a 4-bit cells grid takes up half the time. 
 
 After initialization is complete, the system starts displaying the contents of the memory on screen alternating between the two memory segments for the purpose of double buffering. Our design executes the simulation of cellular automata in real time, which means that it produces and displays 60 cellular automaton generations per second. 
