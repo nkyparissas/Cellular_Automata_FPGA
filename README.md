@@ -2,7 +2,7 @@
 
 This thesis project implements a parallel framework for simulating cellular automata with the use of FPGAs in real time. The project is automatically generated based on the generic variables found on *TOP_LEVEL.vhd*, which the user has to adjust according to the cellular automaton rule they want to simulate. The only part of the project that must be designed by the user is the *CA_Engine.vhd* file, which is specific to each cellular automaton rule. This repository contains three *CA_Engine* examples that can be used as a template.
 
-A detailed description of the design's operation can be found in the thesis' text: [ *LINK GENERATION PENDING* ]
+A detailed description of the design's operation can be found in the [thesis' text](https://dias.library.tuc.gr/view/84584)
 
 The example projects found in this repository were synthesized and implemented with the use of *Vivado 2018.1* for *Digilent's Nexys 4 DDR* board which features *Artix 7* FPGA from *Xilinx*. The netlist constraints uploaded in this repository concern *Nexys 4 DDR*. In case the user wants to use a different board, different netlist constraints must be used.  
 
@@ -25,3 +25,5 @@ Once the bitmap image of the grid is complete, a Matlab script transforms the im
 An executable running in *Microsoft Windows* handles the UART connection between the host computer and the FPGA board and transfers the text file to our system via USB at a rate of 2 MBd. The file transfer time depends on the cell's size in bits, since we can pack either one or two cells per byte being transmitted. A grid consisting of 8-bit cells takes up to 10 seconds to be transmitted, while transmitting a 4-bit cells grid takes up half the time. 
 
 After initialization is complete, the system starts displaying the contents of the memory on screen alternating between the two memory segments for the purpose of double buffering. Our design executes the simulation of cellular automata in real time, which means that it produces and displays 60 cellular automaton generations per second. 
+
+This work is licensed under a [Creative Commons Attribution 4.0 International Public License](https://creativecommons.org/licenses/by/4.0/)
