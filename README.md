@@ -4,15 +4,19 @@ This thesis project implements a parallel framework for simulating cellular auto
 
 A detailed description of the design's operation can be found in the [thesis text](https://dias.library.tuc.gr/view/84584).
 
-The example projects found in this repository were synthesized and implemented with the use of *Vivado 2018.1* for *Digilent's Nexys 4 DDR* board which features *Artix 7* FPGA from *Xilinx*. The netlist constraints uploaded in this repository concern *Nexys 4 DDR*. In case the user wants to use a different board, different netlist constraints must be used.  
+### Vivado Settings
 
-While *Vivado*'s default settings are more than capable of implementing this design for simple cellular automata, complex rules which might be pushing your FPGA's capabilities to the edge require *Performance_Explore* or *Performance_ExtraTimingOpt* for implementation (placement and routing). In case several timing constraints are not recognized, try performing synthesis without hierarchy flattening. 
+The example projects found in this repository were synthesized and implemented with the use of *Vivado 2018.1* for *Digilent's Nexys 4 DDR* board which features a *Xilinx Artix 7* FPGA. The netlist constraints uploaded in this repository concern *Nexys 4 DDR*. In case the user wants to use a different board, different netlist constraints must be used.  
+
+The *TOP_LEVEL.vhd* and *GRID_LINES_TOROIDAL_BUFFER.vhd* files require VHDL 2008 ("Source Node Properties" / "Type" / "VHDL 2008").
+
+The timing constraints are to be used only during the implementation phase and not during synthesis. However, in case several timing constraints are not recognized, try performing synthesis without hierarchy flattening (set at "rebuilt" by default). While *Vivado*'s default settings are more than capable of implementing this design for simple cellular automata, complex rules which might be pushing your FPGA's capabilities to the edge may require the *Performance_Explore* or *Performance_ExtraTimingOpt* directives for implementation.
 
 ### Initialization
 
 An initial configuration of the automaton's grid, also commonly known as the cellular automaton's initial state, is required in order for a cellular automaton to begin its operation. This initial state is set by assigning a state for each cell of the grid. 
 
-As far as our design is concerned, the preparation of the grid's initial configuration must be prepared in the host computer before our system begins its operation. Due to the fact that this is a one-person project focusing on hardware design, the process designed for this task consists of a few basic scripts and programs instead of developing a complete software suite with a graphical user interface. This process, which is shown in the figure below and described later in full detail, comprises a simple yet efficient and ubiquitous way for preparing an initial configuration for our system.
+As far as our design is concerned, the preparation of the grid's initial configuration must be prepared in the host computer before our system begins its operation. Due to the fact that this is a one-person project focusing on hardware design, the process designed for this task consists of a few basic scripts and programs instead of developing a complete software suite with a graphical user interface. This process, which is shown in the figure below and described later in detail, comprises a simple yet efficient and ubiquitous way for preparing an initial configuration for our system.
 
 ![](readme_figs/00_initialization.png) 
 
@@ -26,6 +30,16 @@ An executable running in *Microsoft Windows* handles the UART connection between
 
 After initialization is complete, the system starts displaying the contents of the memory on screen alternating between the two memory segments for the purpose of double buffering. Our design executes the simulation of cellular automata in real time, which means that it produces and displays 60 cellular automaton generations per second. 
 
+### Controls
+
+- Up Button: the simulation runs at full speed (real-time 60 FPS)
+- Down Button: the simulation runs at 1 FPS (default)
+- Left Button: the simulation pauses and the current frame is transmitted back to the host computer via UART
+
 ### License
 
 This work is licensed under a [Creative Commons Attribution 4.0 International Public License](https://creativecommons.org/licenses/by/4.0/).
+
+### NOTES
+
+*May 2020: Successfully synthesized and implemented with Vivado 2019.2.*
