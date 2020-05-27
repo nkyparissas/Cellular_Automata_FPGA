@@ -38,7 +38,7 @@ void ca_engine(ap_uint<4> neighborhood_input[n], ap_uint<1> valid_in, ap_uint<4>
 	static ap_uint<1> valid[n/2+1];
 	#pragma HLS array partition variable=valid complete //put all of the values in the array into registers
 
-	ap_uint<5> i, j; //counters for parsing the neighborhood, 5 bits are sufficient for counting 29 elements
+	int i, j; //counters for parsing the neighborhood
 
 	//pipelined neighborhood
 	for (i = 0; i < n; i++){
