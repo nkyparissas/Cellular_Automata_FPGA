@@ -2,7 +2,7 @@
 
 This thesis project implements a parallel framework for simulating cellular automata with the use of FPGAs in real time. The project is automatically generated based on the generic variables found on *TOP_LEVEL.vhd*, which the user has to adjust according to the cellular automaton rule they want to simulate. The only part of the project that must be designed by the user is the *CA_Engine.vhd* file, which is specific to each cellular automaton rule. This repository contains three *CA_Engine* examples that can be used as a template.
 
-A detailed description of the design's operation can be found in the [thesis text](https://dias.library.tuc.gr/view/84584) ([corrections](https://users.isc.tuc.gr/~nkyparissas/uploads/corrigenda.pdf)).
+A detailed description of the design's operation can be found in the [thesis text](https://dias.library.tuc.gr/view/84584) ([corrections](http://www.nkyparissas.me/uploads/corrigenda.pdf)). You can also find more information in the papers originated from this work (listed below). 
 
 ### Vivado Settings
 
@@ -43,3 +43,8 @@ This work is licensed under a [Creative Commons Attribution 4.0 International Pu
 ### NOTES
 
 *May 2020: Successfully synthesized and implemented with Vivado 2019.2.*
+
+### Papers
+1. Nikolaos Kyparissas and Apostolos Dollas, "Large Scale Cellular Automata on FPGAs: A Generic Architecture and a Framework", ACM Transactions on Reconfigurable Technology and Systems, 14, 1, Article 5, Dec. 2020.
+2. Nikolaos Kyparissas and Apostolos Dollas, "An FPGA-based Architecture to Simulate Cellular Automata with Large Neighborhoods in Real Time", in FPL 2019, Barcelona, Spain, September 2019.
+3. Nikolaos Kyparissas and Apostolos Dollas, "Field Programmable Gate Array Technology as an Enabling Tool Towards Large-Neighborhood Cellular Automata on Cells with Many States", in HPCS 2019, Dublin, Ireland, July 2019. 
