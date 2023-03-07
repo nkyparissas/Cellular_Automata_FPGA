@@ -43,6 +43,7 @@ This work is licensed under a [Creative Commons Attribution 4.0 International Pu
 ### NOTES
 
 *May 2020: Successfully synthesized and implemented with Vivado 2019.2.*
+*March 2023: Fixed neighborhood sliding window in CA Engine: no mirroring, changed (i,j) to follow the (lines,columns) convention. The issue only appears in non-symmetrical neighborhoods. This fix has not been tested. If unsure, for symmetrical neighborhoods please use the previous commit. Many Thanks to Manolis Milonakis for spotting the issue and for suggesting solutions.*
 
 ### Papers
 1. Nikolaos Kyparissas and Apostolos Dollas, "Large Scale Cellular Automata on FPGAs: A Generic Architecture and a Framework", ACM Transactions on Reconfigurable Technology and Systems, 14, 1, Article 5, Dec. 2020.
