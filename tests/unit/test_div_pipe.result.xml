@@ -1,0 +1,9 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="cocotb_adder_tree" classname="test_arith" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_arith.py" lineno="17" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="cocotb_div_pipe" classname="test_arith" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_arith.py" lineno="37" time="0.033835411071777344" sim_time_ns="2241.0" ratio_time="66232.38580568787" />
+  </testsuite>
+</testsuites>
