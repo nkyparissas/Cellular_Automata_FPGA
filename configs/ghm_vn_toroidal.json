@@ -1,0 +1,20 @@
+{
+  "name": "ghm_vn_toroidal",
+  "grid": [
+    1920,
+    1080
+  ],
+  "cell_w": 4,
+  "nbh": 29,
+  "boundary": "toroidal",
+  "rule": "ghm",
+  "mask": "von_neumann",
+  "params": {
+    "T": 5,
+    "STATES": 15,
+    "E": 1
+  },
+  "seed": "data/seeds/ghm_spirals.bmp",
+  "seed_mode": "index",
+  "palette": "legacy4_windows"
+}

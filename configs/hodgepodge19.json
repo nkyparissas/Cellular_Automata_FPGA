@@ -1,0 +1,20 @@
+{
+  "name": "hodgepodge19",
+  "grid": [
+    1920,
+    1080
+  ],
+  "cell_w": 8,
+  "nbh": 19,
+  "boundary": "toroidal",
+  "rule": "hodgepodge",
+  "mask": "moore",
+  "params": {
+    "G": 48,
+    "K": 3
+  },
+  "seed": "data/seeds/hodgepodge19_seed.bmp",
+  "seed_mode": "binary",
+  "seed_value": 251,
+  "palette": "legacy8"
+}

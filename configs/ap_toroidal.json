@@ -1,0 +1,23 @@
+{
+  "name": "ap_toroidal",
+  "grid": [
+    1920,
+    1080
+  ],
+  "cell_w": 4,
+  "nbh": 21,
+  "boundary": "toroidal",
+  "rule": "interval",
+  "mask": "ap21",
+  "params": {
+    "LO1": 20,
+    "HI1": 23,
+    "LO2": 59,
+    "HI2": 100,
+    "ALIVE": 1
+  },
+  "seed": "data/seeds/ap_random.bmp",
+  "seed_mode": "binary",
+  "seed_value": 1,
+  "palette": "legacy4_windows"
+}
