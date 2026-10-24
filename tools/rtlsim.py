@@ -32,7 +32,9 @@ def build(tb_top: str, params: dict | None = None, defines: dict | None = None,
     out_dir = Path(out_dir or ROOT / "build" / "sim" / f"{tb_top}_{tag}")
     out_dir.mkdir(parents=True, exist_ok=True)
     top_file = next((ROOT / "sim").rglob(f"{tb_top}.sv"))
+    # Elaboration-time $error/$fatal (parameter checks) must stop the build.
     cmd = ["verilator", "--binary", "--timing", "-O2", "-Wno-fatal", "-Wno-lint", "-Wno-style",
+           "-Werror-USERERROR", "-Werror-USERFATAL",
            "--x-assign", "unique", "--x-initial", "unique",
            str(ROOT / "rtl" / "lint.vlt"), *_filelist_args(), "-y", str(ROOT / "sim" / "tb"),
            "-y", str(ROOT / "sim" / "models"), "+incdir+" + str(ROOT / "sim" / "models"),

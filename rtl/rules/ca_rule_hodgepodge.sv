@@ -63,9 +63,12 @@ module ca_rule_hodgepodge #(
   logic [33:0] inf_g;
   assign inf_g = 34'(q_inf) + 34'(params_i[ca_pkg::HP_G]);
 
+  // The A/K saturation test is constant for small neighbourhoods.
+  /* verilator lint_off CMPCONST */
   always_ff @(posedge clk_i) begin
     if (c_d == '0)        cell_o <= (q_hea_d > AW'(MAXV)) ? MAXV : CELL_W'(q_hea_d);
     else if (c_d == MAXV) cell_o <= '0;
     else                  cell_o <= (inf_g > 34'(MAXV)) ? MAXV : CELL_W'(inf_g);
   end
+  /* verilator lint_on CMPCONST */
 endmodule
