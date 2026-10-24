@@ -61,7 +61,14 @@ def _without_centre(mask):
 
 def apply(rule: str, values: np.ndarray, centre: np.ndarray, mask, params: list[int],
           cell_w: int, stats) -> np.ndarray:
-    """Evaluate ``rule`` given a statistics function ``stats(values, mask)``."""
+    """Evaluate ``rule`` given a statistics function ``stats(values, mask)``.
+
+    Results are truncated to ``cell_w`` bits, as a cell register would.
+    """
+    return _apply(rule, values, centre, mask, params, cell_w, stats) & ((1 << cell_w) - 1)
+
+
+def _apply(rule, values, centre, mask, params, cell_w, stats):
     if rule == "hodgepodge":
         S = stats(values, mask)
         A = stats((values > 0).astype(np.int64), _without_centre(mask))

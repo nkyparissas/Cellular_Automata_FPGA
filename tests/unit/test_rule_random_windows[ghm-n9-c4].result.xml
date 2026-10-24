@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="cocotb_rule_random_windows" classname="test_engine" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_engine.py" lineno="37" time="0.05949544906616211" sim_time_ns="5110.0" ratio_time="85888.92226559056" />
+  </testsuite>
+</testsuites>

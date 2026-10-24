@@ -1,7 +1,7 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
     <property name="random_seed" value="1" />
-    <testcase name="cocotb_adder_tree" classname="test_arith" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_arith.py" lineno="17" time="0.00477147102355957" sim_time_ns="401.0" ratio_time="84041.16844051366" />
+    <testcase name="cocotb_adder_tree" classname="test_arith" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_arith.py" lineno="17" time="0.004942655563354492" sim_time_ns="401.0" ratio_time="81130.47629154407" />
     <testcase name="cocotb_div_pipe" classname="test_arith" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_arith.py" lineno="37" time="0" sim_time_ns="0" ratio_time="0">
       <skipped />
     </testcase>
