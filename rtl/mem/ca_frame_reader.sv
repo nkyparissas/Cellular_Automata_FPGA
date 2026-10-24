@@ -118,7 +118,7 @@ module ca_frame_reader #(
     axi_req_o.r_ready  = r_ready;
   end
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       istate  <= I_IDLE;
       v       <= '0;
@@ -162,7 +162,7 @@ module ca_frame_reader #(
   assign desc_full  = (dq_wr - dq_rd) == 3'(DQ);
   assign desc_empty = dq_wr == dq_rd;
   assign desc_out   = dq[dq_rd[1:0]];
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       dq_wr <= '0;
       dq_rd <= '0;
@@ -200,7 +200,7 @@ module ca_frame_reader #(
   assign m_axis_tlast_o  = last_beat;
   assign m_axis_tuser_o  = desc_out.sof && beat == '0;
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       beat          <= '0;
       rows_rx       <= '0;

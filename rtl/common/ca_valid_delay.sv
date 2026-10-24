@@ -12,7 +12,7 @@ module ca_valid_delay #(
     assign q_o = d_i;
   end else begin : g_regs
     logic [D-1:0] sr;
-    always_ff @(posedge clk_i or negedge rst_ni) begin
+    always_ff @(posedge clk_i) begin
       if (!rst_ni) begin
         sr <= '0;
       end else begin

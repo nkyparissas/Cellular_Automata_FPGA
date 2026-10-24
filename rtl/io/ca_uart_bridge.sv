@@ -88,7 +88,7 @@ module ca_uart_bridge #(
     m_axil_req_o.r_ready  = state == S_REG_RD_R;
   end
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       state   <= S_CMD;
       ret     <= S_CMD;

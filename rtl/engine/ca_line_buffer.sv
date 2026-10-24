@@ -56,7 +56,7 @@ module ca_line_buffer #(
   assign alloc_ready_o = PW'(alloc_ptr - rel_a) < PW'(SLOTS);
   assign alloc_slot_o  = wslot;
 
-  always_ff @(posedge aclk_i or negedge arst_ni) begin
+  always_ff @(posedge aclk_i) begin
     if (!arst_ni) begin
       alloc_ptr   <= '0;
       written_ptr <= '0;
@@ -103,7 +103,7 @@ module ca_line_buffer #(
   logic [SLW-1:0] base_inc;
   assign base_inc = (base == SLW'(SLOTS - 1)) ? '0 : base + 1'b1;
 
-  always_ff @(posedge eclk_i or negedge erst_ni) begin
+  always_ff @(posedge eclk_i) begin
     if (!erst_ni) begin
       state     <= S_IDLE;
       rel_ptr   <= '0;
@@ -150,7 +150,7 @@ module ca_line_buffer #(
   // Stage 1: control aligned with the RAM output (read latency 1).
   logic           s1_act, s1_zero, s1_cv;
   logic [SLW-1:0] s1_base;
-  always_ff @(posedge eclk_i or negedge erst_ni) begin
+  always_ff @(posedge eclk_i) begin
     if (!erst_ni) begin
       s1_act  <= 1'b0;
       s1_zero <= 1'b0;
@@ -173,7 +173,7 @@ module ca_line_buffer #(
     end
   end
 
-  always_ff @(posedge eclk_i or negedge erst_ni) begin
+  always_ff @(posedge eclk_i) begin
     if (!erst_ni) vld_o <= 1'b0;
     else          vld_o <= s1_act && s1_cv;
   end

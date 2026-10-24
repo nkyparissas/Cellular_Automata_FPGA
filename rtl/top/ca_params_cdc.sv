@@ -13,7 +13,7 @@ module ca_params_cdc (
   ca_pkg::rule_params_t hold;
   logic                 tog_a, tog_e, tog_e_q;
 
-  always_ff @(posedge aclk_i or negedge arst_ni) begin
+  always_ff @(posedge aclk_i) begin
     if (!arst_ni) begin
       hold  <= '0;
       tog_a <= 1'b0;
@@ -25,7 +25,7 @@ module ca_params_cdc (
 
   ca_sync #(.W(1)) i_sync (.clk_i(eclk_i), .d_i(tog_a), .q_o(tog_e));
 
-  always_ff @(posedge eclk_i or negedge erst_ni) begin
+  always_ff @(posedge eclk_i) begin
     if (!erst_ni) begin
       tog_e_q  <= 1'b0;
       params_o <= '0;

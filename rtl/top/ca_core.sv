@@ -160,11 +160,9 @@ module ca_core #(
 
 `ifndef SYNTHESIS
   // The drain only starts a row when the FIFO can hold it (spec Section 8).
-  /* verilator lint_off SYNCASYNCNET */
   always_ff @(posedge eclk_i) begin
     if (e_rst_n && word_vld && !fifo_wready) $error("ca_core: output FIFO overflow");
   end
-  /* verilator lint_on SYNCASYNCNET */
 `else
   logic unused_fifo_wready;
   assign unused_fifo_wready = fifo_wready;

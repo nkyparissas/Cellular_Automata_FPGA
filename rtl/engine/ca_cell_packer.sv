@@ -16,7 +16,7 @@ module ca_cell_packer #(
   logic [DATA_W-1:0] acc;
   logic [CW-1:0]     cnt;
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       cnt        <= '0;
       word_vld_o <= 1'b0;

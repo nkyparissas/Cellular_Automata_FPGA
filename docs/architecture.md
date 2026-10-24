@@ -42,7 +42,7 @@ The controller starts a pass when RUN is set and a frame request is pending, fro
 
 ## Clocks and resets
 
-`aclk` runs the AXI side (registers, controller, reader, writer, line-buffer write port, consumer stream); `eclk` runs the engine. Resets are active low, asserted asynchronously and released synchronously per domain (`rtl/common/ca_reset_sync.sv`). Rule parameters cross with a toggle handshake at pass start (`rtl/top/ca_params_cdc.sv`).
+`aclk` runs the AXI side (registers, controller, reader, writer, line-buffer write port, consumer stream); `eclk` runs the engine. Resets are active low and synchronous; each domain synchronises the external reset with `rtl/common/ca_reset_sync.sv`, and only control and valid state is reset (data-path registers and delay lines are not). Rule parameters cross with a toggle handshake at pass start (`rtl/top/ca_params_cdc.sv`).
 
 ## Verification
 

@@ -20,7 +20,7 @@ module ca_uart_tx #(
   // Ready only once the stop bit has lasted a full bit period.
   assign ready_o = left == '0 && cnt == '0;
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       shreg <= '1;
       left  <= '0;

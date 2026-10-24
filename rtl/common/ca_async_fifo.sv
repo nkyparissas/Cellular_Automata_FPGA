@@ -29,7 +29,7 @@ module ca_async_fifo #(
     if (w_valid_i && !full) mem[wbin[AW-1:0]] <= w_data_i;
   end
 
-  always_ff @(posedge wclk_i or negedge wrst_ni) begin
+  always_ff @(posedge wclk_i) begin
     if (!wrst_ni) begin
       wbin  <= '0;
       wgray <= '0;
@@ -49,7 +49,7 @@ module ca_async_fifo #(
     if (fetch) r_data_o <= mem[rbin[AW-1:0]];
   end
 
-  always_ff @(posedge rclk_i or negedge rrst_ni) begin
+  always_ff @(posedge rclk_i) begin
     if (!rrst_ni) begin
       rbin      <= '0;
       rgray     <= '0;

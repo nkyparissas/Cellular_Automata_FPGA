@@ -19,7 +19,7 @@ module ca_uart_rx #(
 
   ca_sync #(.W(1)) i_sync (.clk_i, .d_i(rxd_i), .q_o(rxd));
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       busy    <= 1'b0;
       cnt     <= '0;

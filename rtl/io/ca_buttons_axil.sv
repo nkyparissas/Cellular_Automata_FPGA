@@ -30,7 +30,7 @@ module ca_buttons_axil
 
   for (genvar b = 0; b < 3; b++) begin : g_deb
     logic [DW-1:0] cnt;
-    always_ff @(posedge clk_i or negedge rst_ni) begin
+    always_ff @(posedge clk_i) begin
       if (!rst_ni) begin
         cnt       <= '0;
         stable[b] <= 1'b0;
@@ -64,7 +64,7 @@ module ca_buttons_axil
     m_axil_req_o.r_ready  = state == S_RD_R;
   end
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       stable_q <= '0;
       evt      <= '0;

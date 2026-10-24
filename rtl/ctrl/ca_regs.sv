@@ -83,7 +83,7 @@ module ca_regs
     endcase
   end
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       axil_resp_o      <= '0;
       run_o            <= 1'b0;

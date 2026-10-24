@@ -19,7 +19,7 @@ module ca_window #(
     end
   end
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) vld_o <= 1'b0;
     else         vld_o <= vld_i;
   end

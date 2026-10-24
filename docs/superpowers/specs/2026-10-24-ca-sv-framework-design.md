@@ -74,7 +74,7 @@ The eclk side is pass-agnostic: pass lengths are compile-time constants, so no p
 
 ## 7. Clock domains and resets
 
-`aclk` drives regs, controller, reader, writer, line-buffer write ports and the consumer stream. `eclk` drives the line-buffer read side, window, rule, packer and the FIFO write side. The two may be the same clock. Resets are active-low (`rst_ni`, pulp convention), asserted asynchronously and released synchronously per domain by `ca_reset_sync`. Rule parameters are captured in `aclk` at pass start and transferred with a toggle handshake; they are stable for the whole pass because passes do not overlap.
+`aclk` drives regs, controller, reader, writer, line-buffer write ports and the consumer stream. `eclk` drives the line-buffer read side, window, rule, packer and the FIFO write side. The two may be the same clock. Resets are active-low (`rst_ni`, pulp convention) and synchronous (user decision, 2026-10-24); `ca_reset_sync` synchronises the external reset into each domain, and only control and valid state is reset. Rule parameters are captured in `aclk` at pass start and transferred with a toggle handshake; they are stable for the whole pass because passes do not overlap.
 
 ## 8. Flow control
 

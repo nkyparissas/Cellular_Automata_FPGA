@@ -64,7 +64,7 @@ module ca_video_out #(
   assign active      = h < HW'(H_ACTIVE) && v < VW'(V_ACTIVE);
   assign frame_start = h == '0 && v == '0;
 
-  always_ff @(posedge pclk_i or negedge prst_ni) begin
+  always_ff @(posedge pclk_i) begin
     if (!prst_ni) begin
       h <= '0;
       v <= '0;
@@ -94,7 +94,7 @@ module ca_video_out #(
     if (frame_start) shown_next = f_valid && f_user;
   end
 
-  always_ff @(posedge pclk_i or negedge prst_ni) begin
+  always_ff @(posedge pclk_i) begin
     if (!prst_ni) begin
       synced      <= 1'b0;
       shown       <= 1'b0;
@@ -130,7 +130,7 @@ module ca_video_out #(
   // fetch/shift above, so the visible pipeline is: counters -> word -> palette.
   logic              de_q, hs_q, vs_q, shown_q;
   logic [CELL_W-1:0] cell_q;
-  always_ff @(posedge pclk_i or negedge prst_ni) begin
+  always_ff @(posedge pclk_i) begin
     if (!prst_ni) begin
       de_q    <= 1'b0;
       hs_q    <= !HS_POL;
@@ -149,7 +149,7 @@ module ca_video_out #(
   ca_palette #(.CELL_W(CELL_W), .PALETTE(PALETTE)) i_pal (.clk_i(pclk_i), .cell_i(cell_q), .rgb_o(rgb_pal));
 
   logic de_qq, hs_qq, vs_qq, shown_qq;
-  always_ff @(posedge pclk_i or negedge prst_ni) begin
+  always_ff @(posedge pclk_i) begin
     if (!prst_ni) begin
       de_qq    <= 1'b0;
       hs_qq    <= !HS_POL;
@@ -169,12 +169,12 @@ module ca_video_out #(
 
   // ------------------------------------------------- frame request (aclk)
   logic req_tog, req_s, req_q;
-  always_ff @(posedge pclk_i or negedge prst_ni) begin
+  always_ff @(posedge pclk_i) begin
     if (!prst_ni) req_tog <= 1'b0;
     else if (h == '0 && v == VW'(REQ_LINE)) req_tog <= !req_tog;
   end
   ca_sync #(.W(1)) i_req_sync (.clk_i(aclk_i), .d_i(req_tog), .q_o(req_s));
-  always_ff @(posedge aclk_i or negedge arst_ni) begin
+  always_ff @(posedge aclk_i) begin
     if (!arst_ni) begin
       req_q       <= 1'b0;
       frame_req_o <= 1'b0;

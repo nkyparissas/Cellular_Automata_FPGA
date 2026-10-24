@@ -32,7 +32,7 @@ module ca_controller (
   assign start_ff  = !active && run_i && !pause_i && ff_left != '0;
   assign start_req = !active && run_i && !start_ff && (pending_o || auto_i);
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       pass_start_o <= 1'b0;
       rd_fwd_en_o  <= 1'b0;

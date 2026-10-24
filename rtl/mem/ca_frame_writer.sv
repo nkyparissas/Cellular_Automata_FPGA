@@ -80,7 +80,7 @@ module ca_frame_writer #(
   assign w_hs       = axi_req_o.w_valid && axi_resp_i.w_ready;
   assign b_hs       = axi_resp_i.b_valid;
 
-  always_ff @(posedge clk_i or negedge rst_ni) begin
+  always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       state    <= S_IDLE;
       base_q   <= '0;
