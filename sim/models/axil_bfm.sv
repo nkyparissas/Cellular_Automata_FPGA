@@ -17,7 +17,7 @@ module axil_bfm #(
     req_o.w.data   = data;
     req_o.w.strb   = '1;
     req_o.w_valid  = 1'b1;
-    req_o.b_ready  = 1'b1;
+    req_o.b_ready  = 1'b0;
     fork
       begin
         while (!resp_i.aw_ready) @(negedge clk_i);
@@ -30,6 +30,7 @@ module axil_bfm #(
         req_o.w_valid = 1'b0;
       end
     join
+    req_o.b_ready = 1'b1;   // raised only now, so the response cannot slip past
     while (!resp_i.b_valid) @(negedge clk_i);
     @(negedge clk_i);
     req_o.b_ready = 1'b0;
@@ -39,10 +40,11 @@ module axil_bfm #(
     @(negedge clk_i);
     req_o.ar.addr  = addr;
     req_o.ar_valid = 1'b1;
-    req_o.r_ready  = 1'b1;
+    req_o.r_ready  = 1'b0;
     while (!resp_i.ar_ready) @(negedge clk_i);
     @(negedge clk_i);
     req_o.ar_valid = 1'b0;
+    req_o.r_ready  = 1'b1;
     while (!resp_i.r_valid) @(negedge clk_i);
     data = resp_i.r.data;
     @(negedge clk_i);

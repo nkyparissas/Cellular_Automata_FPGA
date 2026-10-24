@@ -7,6 +7,7 @@
 third_party/common_cells/src/cf_math_pkg.sv
 third_party/axi/src/axi_pkg.sv
 rtl/pkg/ca_pkg.sv
+rtl/ctrl/ca_regs_pkg.sv
 -y rtl/common
 -y rtl/arith
 -y rtl/engine
