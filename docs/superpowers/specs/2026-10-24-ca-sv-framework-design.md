@@ -158,10 +158,10 @@ UART bridge protocol (little-endian; addresses and lengths multiples of `DATA_W/
 {"name": "hodgepodge29", "grid": [1920, 1080], "cell_w": 8, "nbh": 29,
  "boundary": "toroidal", "rule": "hodgepodge", "mask": "moore",
  "params": {"G": 105, "K": 5}, "seed": "data/seeds/hodgepodge29_seed.bmp",
- "seed_mode": "gray8", "palette": "legacy8"}
+ "seed_mode": "binary", "seed_value": 251, "palette": "legacy8"}
 ```
 
-`seed_mode` is `gray8` (legacy `bmp2ascii.m` for 8-bit: sorted grey palette lookup times 255, rounded) or `index` (raw palette index).
+`seed_mode` is `index` (raw palette index), `binary` (non-zero pixels become `seed_value`; reproduces the legacy text grids: 251 for Hodgepodge, 1 for Artificial Physics) or `gray8` (legacy `bmp2ascii.m` for 8-bit: sorted grey palette lookup times 255, rounded).
 
 ## 18. Repository layout
 
