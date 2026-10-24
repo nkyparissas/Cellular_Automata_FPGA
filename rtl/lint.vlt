@@ -1,3 +1,7 @@
 `verilator_config
 // Vendored code is linted upstream; its style warnings are not ours to fix.
 lint_off -file "*third_party/*"
+// Packages export constants for other modules; unused ones are expected.
+lint_off -rule UNUSEDPARAM -file "*_pkg.sv"
+// Arguments of package functions look unused in tops that never call them.
+lint_off -rule UNUSEDSIGNAL -file "*_pkg.sv"
