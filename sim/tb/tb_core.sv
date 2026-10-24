@@ -2,6 +2,7 @@
 //   +seed_hex=<file> +gens=<n> +dump_gens=<a,b,...,> +dump_dir=<dir/>
 //   +mem_stall +mem_lat +sink_stall +sink_req=<0|1> +aclk_ps +eclk_ps
 //   +midpass_param=1   change RULE_PARAM[0] by +7 while pass 2 runs
+//   +max_kcycles=<n>   watchdog, thousands of aclk cycles (default 50000)
 // After every generation the frame streamed to the consumer is checked
 // against the buffer that was front during that pass.
 `timescale 1ns/1ps
@@ -78,7 +79,6 @@ module tb_core;
   string seed_hex, dump_dir, dump_gens;
   initial begin
     int unsigned gens = 1, sink_req = 0, midpass = 0;
-    longint unsigned max_cycles = 64'd50_000_000;
     if (!$value$plusargs("seed_hex=%s", seed_hex)) $fatal(1, "+seed_hex missing");
     void'($value$plusargs("gens=%d", gens));
     if (!$value$plusargs("dump_gens=%s", dump_gens)) dump_gens = "";
@@ -117,10 +117,12 @@ module tb_core;
     $finish;
   end
 
+  // Watchdog in thousands of aclk cycles (+max_kcycles), which keeps long
+  // runs within 32-bit plusarg parsing.
   initial begin
-    longint unsigned max_cycles = 64'd50_000_000;
-    void'($value$plusargs("max_cycles=%d", max_cycles));
-    repeat (max_cycles) @(posedge aclk);
+    int unsigned max_kcycles = 50_000;
+    void'($value$plusargs("max_kcycles=%d", max_kcycles));
+    repeat (max_kcycles) repeat (1000) @(posedge aclk);
     $fatal(1, "timeout: gen_count=%0d pass_count=%0d", dut.gen_count, dut.pass_count);
   end
 endmodule
