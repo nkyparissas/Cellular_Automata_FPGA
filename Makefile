@@ -3,11 +3,11 @@ VERILATOR ?= verilator
 PYTHON    ?= python3
 
 # Every module that must lint clean on its own (default parameters).
-LINT_TOPS := tb_axi_smoke tb_pkg_funcs ca_delay ca_sync ca_reset_sync ca_gray_xfer ca_async_fifo ca_ram_sdp_asym ca_cell_packer ca_adder_tree ca_div_pipe ca_valid_delay ca_window ca_engine tb_engine lint_engine_ghm ca_line_buffer lint_reader lint_writer lint_regs ca_controller ca_params_cdc ca_core_flat ca_palette ca_video_out
+LINT_TOPS := tb_axi_smoke tb_pkg_funcs ca_delay ca_sync ca_reset_sync ca_gray_xfer ca_async_fifo ca_ram_sdp_asym ca_cell_packer ca_adder_tree ca_div_pipe ca_valid_delay ca_window ca_engine tb_engine lint_engine_ghm ca_line_buffer lint_reader lint_writer lint_regs ca_controller ca_params_cdc ca_core_flat ca_palette ca_video_out ca_uart_rx ca_uart_tx ca_display_system
 
 LINT_FLAGS := --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f -y sim/tb -y sim/models
 
-.PHONY: lint test clean
+.PHONY: lint lint-boards test clean
 lint:
 	@set -e; for t in $(LINT_TOPS); do \
 	  echo "lint $$t"; \
@@ -20,3 +20,9 @@ test:
 
 clean:
 	rm -rf build sim_build
+
+# Board tops lint against stub IP modules (MIG, clocking wizard).
+lint-boards:
+	$(PYTHON) tools/gen_cfg.py --config configs/hodgepodge29.json --data-w 128 --out build/lint_cfg/ca_cfg.svh
+	$(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg \
+	  -y boards/nexys4ddr/stubs --top-module top_nexys4ddr boards/nexys4ddr/top_nexys4ddr.sv

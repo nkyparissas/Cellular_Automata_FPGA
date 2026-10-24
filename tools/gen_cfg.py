@@ -1,8 +1,16 @@
 """Generate the SystemVerilog configuration header for a CA configuration and
-convert frames to and from the $readmemh word format of the testbenches."""
+convert frames to and from the $readmemh word format of the testbenches.
+
+Example:
+    python3 tools/gen_cfg.py --config configs/hodgepodge29.json --data-w 128 --out build/ca_cfg.svh
+"""
+import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "model"))
 
 from ca_model import masks
 from ca_model.rules import params_vector
@@ -60,3 +68,20 @@ def hex_to_frame(lines, grid_x: int, grid_y: int, cell_w: int, data_w: int) -> n
             w = words[(y * grid_x + x) // per]
             out[y, x] = (w >> ((x % per) * cell_w)) & mask
     return out
+
+
+def main(argv=None) -> int:
+    from ca_model import config
+    ap = argparse.ArgumentParser(description="Write ca_cfg.svh for a configuration file")
+    ap.add_argument("--config", required=True)
+    ap.add_argument("--data-w", type=int, default=128)
+    ap.add_argument("--out", required=True)
+    args = ap.parse_args(argv)
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    gen_cfg_svh(config.load(args.config), args.data_w, args.out)
+    print(f"wrote {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
