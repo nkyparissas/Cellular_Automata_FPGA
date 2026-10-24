@@ -28,4 +28,17 @@ Command: `python3 tools/run_rtl_experiment.py --config configs/<name>.json --gen
 | ghm_moore_cylindrical | 36 s | 11.1 | MATCH |
 | ap_toroidal | 18 s | 7.5 | MATCH |
 
-1000-generation RTL runs (snapshots every 250 generations, compared with the model): in progress; results are appended here when they finish.
+1000-generation RTL runs (snapshots every 250 generations, compared with the model's snapshots at the same generations), intermediate state after about two hours:
+
+| Experiment | Gen 250 | Gen 500 | Gen 750 | Gen 1000 |
+|---|---|---|---|---|
+| hodgepodge29 | MATCH | running | | |
+| hodgepodge19 | MATCH | MATCH | running | |
+| ghm_circle_toroidal | MATCH | running | | |
+| ghm_vn_toroidal | MATCH | running | | |
+| ghm_moore_cylindrical | MATCH | running | | |
+| ap_toroidal | MATCH | MATCH | running | |
+
+## Legacy VHDL (Tasks 22 and 23)
+
+The legacy toroidal buffer with the Hodgepodge n29, GHM and Artificial Physics engines reproduces the golden model exactly on random 64x64 toroidal grids (GHDL; two simulation artefacts of the legacy code patched in a build copy, see `docs/legacy_vhdl_findings.md` #13 and #14). Findings 1, 2 and 3 were reproduced with directed testbenches.
