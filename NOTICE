@@ -1,0 +1,33 @@
+Large-Neighbourhood Cellular Automata on FPGAs
+Copyright 2019-2026 Nikolaos Kyparissas
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+Under Section 4(d) of that licence, any redistribution or derivative work must
+retain this NOTICE file, including the attribution below.
+
+Attribution
+-----------
+This work originates from the following publications by Nikolaos Kyparissas
+and Apostolos Dollas. Derivative works and publications using this work must
+credit the author and cite them:
+
+1. N. Kyparissas and A. Dollas, "Large Scale Cellular Automata on FPGAs: A
+   Generic Architecture and a Framework", ACM Transactions on Reconfigurable
+   Technology and Systems, vol. 14, no. 1, Article 5, Dec. 2020.
+2. N. Kyparissas and A. Dollas, "An FPGA-based Architecture to Simulate
+   Cellular Automata with Large Neighborhoods in Real Time", in Proc. 29th
+   International Conference on Field Programmable Logic and Applications
+   (FPL 2019), Barcelona, Spain, Sep. 2019.
+3. N. Kyparissas and A. Dollas, "Field Programmable Gate Array Technology as
+   an Enabling Tool Towards Large-Neighborhood Cellular Automata on Cells with
+   Many States", in Proc. International Conference on High Performance
+   Computing & Simulation (HPCS 2019), Dublin, Ireland, Jul. 2019.
+4. N. Kyparissas, "A Framework for the Real-Time Execution of Cellular
+   Automata on Reconfigurable Logic", Diploma Thesis, Technical University of
+   Crete, 2019. https://dias.library.tuc.gr/view/84584
+
+Third-party components
+----------------------
+third_party/axi           pulp-platform/axi, Solderpad Hardware License 0.51
+third_party/common_cells  pulp-platform/common_cells, Solderpad Hardware License 0.51
+See third_party/README.md for versions and upstream locations.

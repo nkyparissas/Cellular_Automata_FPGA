@@ -1,0 +1,3 @@
+`verilator_config
+// Vendored code is linted upstream; its style warnings are not ours to fix.
+lint_off -file "*third_party/*"

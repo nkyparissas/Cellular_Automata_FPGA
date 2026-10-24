@@ -1,0 +1,10 @@
+[project]
+name = "ca-fpga"
+version = "0.1.0"
+description = "Large-neighbourhood cellular automata on FPGAs: RTL, golden model and host software"
+requires-python = ">=3.11"
+dependencies = ["numpy", "pillow", "pyserial"]
+
+[tool.pytest.ini_options]
+pythonpath = ["model", "host", "tools", "tests"]
+testpaths = ["tests"]

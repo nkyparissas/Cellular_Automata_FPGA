@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "If you use this work, please credit the author and cite the article below (see NOTICE for the full list)."
+title: "Large-Neighbourhood Cellular Automata on FPGAs"
+authors:
+  - family-names: Kyparissas
+    given-names: Nikolaos
+license: Apache-2.0
+repository-code: "https://github.com/nkyparissas/Cellular_Automata_FPGA"
+preferred-citation:
+  type: article
+  title: "Large Scale Cellular Automata on FPGAs: A Generic Architecture and a Framework"
+  authors:
+    - family-names: Kyparissas
+      given-names: Nikolaos
+    - family-names: Dollas
+      given-names: Apostolos
+  journal: "ACM Transactions on Reconfigurable Technology and Systems"
+  volume: 14
+  issue: 1
+  number: 5
+  month: 12
+  year: 2020
+references:
+  - type: conference-paper
+    title: "An FPGA-based Architecture to Simulate Cellular Automata with Large Neighborhoods in Real Time"
+    authors:
+      - family-names: Kyparissas
+        given-names: Nikolaos
+      - family-names: Dollas
+        given-names: Apostolos
+    conference:
+      name: "International Conference on Field Programmable Logic and Applications (FPL)"
+    year: 2019
+  - type: conference-paper
+    title: "Field Programmable Gate Array Technology as an Enabling Tool Towards Large-Neighborhood Cellular Automata on Cells with Many States"
+    authors:
+      - family-names: Kyparissas
+        given-names: Nikolaos
+      - family-names: Dollas
+        given-names: Apostolos
+    conference:
+      name: "International Conference on High Performance Computing & Simulation (HPCS)"
+    year: 2019
