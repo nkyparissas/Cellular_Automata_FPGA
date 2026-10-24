@@ -1,9 +1,0 @@
-<testsuites name="results">
-  <testsuite name="all" package="all">
-    <property name="random_seed" value="1" />
-    <testcase name="cocotb_ram_mapping" classname="test_ram_packer" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_ram_packer.py" lineno="12" time="0" sim_time_ns="0" ratio_time="0">
-      <skipped />
-    </testcase>
-    <testcase name="cocotb_packer_order" classname="test_ram_packer" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_ram_packer.py" lineno="36" time="0.025881290435791016" sim_time_ns="1680.0" ratio_time="64911.75562392911" />
-  </testsuite>
-</testsuites>

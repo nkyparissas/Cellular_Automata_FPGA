@@ -6,3 +6,5 @@ __pycache__/
 *.fst
 .pytest_cache/
 .superpowers/
+*.result.xml
+results.xml

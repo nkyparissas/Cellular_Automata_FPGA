@@ -48,6 +48,7 @@ def run_cocotb(toplevel: str, test_module: str, parameters: dict | None = None,
     xml = runner.test(test_module=test_module, hdl_toplevel=toplevel, build_dir=build_dir,
                       test_dir=Path(__file__).parent, testcase=testcase, seed=seed,
                       plusargs=list(plusargs) + ["+verilator+rand+reset+2"],
+                      results_xml=str(build_dir / f"{testcase or test_module}.results.xml"),
                       log_file=build_dir / f"{test_module}.log")
     root = ET.parse(xml).getroot()
     cases = root.findall(".//testcase")
