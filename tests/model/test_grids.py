@@ -36,6 +36,13 @@ def test_hodgepodge19_seed_loads():
     assert g.shape == (1080, 1920) and set(np.unique(g)) == {0, 251}
 
 
+def test_grid_custom_raw_matches_legacy():
+    # data/seeds/hodgepodge19_grid_custom.png stores sw/8-bit (Hodgepodge 19x19)/grid_custom.txt
+    # losslessly; the legacy README names it as the seed that self-organises.
+    g = load_seed(SEEDS / "hodgepodge19_grid_custom.png", "raw")
+    assert g.shape == (1080, 1920) and zlib.crc32(g.tobytes()) == 0x368EC638
+
+
 def test_gray8_follows_bmp2ascii():
     # Black/white palette: sorted grey levels 0.0 and 1.0 map to 0 and 255.
     g = load_seed(SEEDS / "hodgepodge29_seed.bmp", "gray8")

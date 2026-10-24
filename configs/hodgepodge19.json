@@ -10,11 +10,10 @@
   "rule": "hodgepodge",
   "mask": "moore",
   "params": {
-    "G": 48,
+    "G": 60,
     "K": 3
   },
-  "seed": "data/seeds/hodgepodge19_seed.bmp",
-  "seed_mode": "binary",
-  "seed_value": 251,
+  "seed": "data/seeds/hodgepodge19_grid_custom.png",
+  "seed_mode": "raw",
   "palette": "legacy8"
 }

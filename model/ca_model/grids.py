@@ -27,11 +27,17 @@ def load_seed(path, mode: str, value: int | None = None) -> np.ndarray:
     ``mode="index"`` returns the raw palette indices (legacy 4-bit scripts).
     ``mode="binary"`` maps every non-zero index to ``value`` (the legacy text
     grids of the Hodgepodge and Artificial Physics experiments use 251 and 1).
+    ``mode="raw"`` returns the pixel values of a greyscale or indexed image
+    unchanged (used for seeds stored losslessly from legacy text grids).
     ``mode="gray8"`` reproduces the legacy 8-bit ``bmp2ascii.m``: the grey
     levels of the palette are sorted ascending and pixel index ``i`` maps to
     ``round(sorted_grey[i] * 255)``.
     """
     img = Image.open(Path(path))
+    if mode == "raw":
+        if img.mode not in ("L", "P"):
+            raise ValueError(f"{path}: raw seeds must be greyscale or indexed, got mode {img.mode}")
+        return np.array(img, dtype=np.uint8)
     if img.mode != "P":
         raise ValueError(f"{path}: expected an indexed (palette) BMP, got mode {img.mode}")
     idx = np.array(img, dtype=np.uint8)
