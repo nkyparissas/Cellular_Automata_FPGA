@@ -26,3 +26,5 @@ lint-boards:
 	$(PYTHON) tools/gen_cfg.py --config configs/hodgepodge29.json --data-w 128 --out build/lint_cfg/ca_cfg.svh
 	$(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg \
 	  -y boards/nexys4ddr/stubs --top-module top_nexys4ddr boards/nexys4ddr/top_nexys4ddr.sv
+	$(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg \
+	  --top-module ca_core_xdma boards/xdma_template/ca_core_xdma.sv
