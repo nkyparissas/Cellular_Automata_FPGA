@@ -4,7 +4,7 @@
     <testcase name="cocotb_gray_xfer_monotonic" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="23" time="0" sim_time_ns="0" ratio_time="0">
       <skipped />
     </testcase>
-    <testcase name="cocotb_async_fifo_random" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="54" time="0.8594098091125488" sim_time_ns="20541.0" ratio_time="23901.286420283268" />
+    <testcase name="cocotb_async_fifo_random" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="54" time="0.9244976043701172" sim_time_ns="20541.0" ratio_time="22218.554058877293" />
     <testcase name="cocotb_delay" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="92" time="0" sim_time_ns="0" ratio_time="0">
       <skipped />
     </testcase>

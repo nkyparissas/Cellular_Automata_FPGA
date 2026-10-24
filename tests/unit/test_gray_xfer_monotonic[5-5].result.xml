@@ -1,7 +1,7 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
     <property name="random_seed" value="1" />
-    <testcase name="cocotb_gray_xfer_monotonic" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="23" time="0.05959630012512207" sim_time_ns="3115.0" ratio_time="52268.34540835717" />
+    <testcase name="cocotb_gray_xfer_monotonic" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="23" time="0.05385994911193848" sim_time_ns="3115.0" ratio_time="57835.18275381244" />
     <testcase name="cocotb_async_fifo_random" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="54" time="0" sim_time_ns="0" ratio_time="0">
       <skipped />
     </testcase>

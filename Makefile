@@ -3,7 +3,7 @@ VERILATOR ?= verilator
 PYTHON    ?= python3
 
 # Every module that must lint clean on its own (default parameters).
-LINT_TOPS := tb_axi_smoke tb_pkg_funcs ca_delay ca_sync ca_reset_sync ca_gray_xfer ca_async_fifo
+LINT_TOPS := tb_axi_smoke tb_pkg_funcs ca_delay ca_sync ca_reset_sync ca_gray_xfer ca_async_fifo ca_ram_sdp_asym ca_cell_packer
 
 LINT_FLAGS := --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f -y sim/tb -y sim/models
 

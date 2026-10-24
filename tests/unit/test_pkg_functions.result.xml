@@ -10,6 +10,6 @@
     <testcase name="cocotb_delay" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="92" time="0" sim_time_ns="0" ratio_time="0">
       <skipped />
     </testcase>
-    <testcase name="cocotb_pkg_functions" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="109" time="0.0009222030639648438" sim_time_ns="1.0" ratio_time="1084.3598759048605" />
+    <testcase name="cocotb_pkg_functions" classname="test_cdc" file="/home/nkyparissas/ca_workspace/Cellular_Automata_FPGA_new/tests/unit/test_cdc.py" lineno="109" time="0.002427339553833008" sim_time_ns="1.0" ratio_time="411.9736764561438" />
   </testsuite>
 </testsuites>
