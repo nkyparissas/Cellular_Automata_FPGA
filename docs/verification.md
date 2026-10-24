@@ -28,16 +28,16 @@ Command: `python3 tools/run_rtl_experiment.py --config configs/<name>.json --gen
 | ghm_moore_cylindrical | 36 s | 11.1 | MATCH |
 | ap_toroidal | 18 s | 7.5 | MATCH |
 
-1000-generation RTL runs (snapshots every 250 generations, compared with the model's snapshots at the same generations), intermediate state after about two hours:
+Long RTL runs (snapshots every 250 generations compared with the model's snapshots at the same generations). They were stopped after about four hours at the user's request; RTL runs are now limited to 200 generations (`tools/run_rtl_experiment.py` refuses more without `--allow-long`), and longer horizons use the golden model.
 
-| Experiment | Gen 250 | Gen 500 | Gen 750 | Gen 1000 |
-|---|---|---|---|---|
-| hodgepodge29 | MATCH | running | | |
-| hodgepodge19 | MATCH | MATCH | running | |
-| ghm_circle_toroidal | MATCH | running | | |
-| ghm_vn_toroidal | MATCH | running | | |
-| ghm_moore_cylindrical | MATCH | running | | |
-| ap_toroidal | MATCH | MATCH | running | |
+| Experiment | Gen 250 | Gen 500 | Gen 750 |
+|---|---|---|---|
+| hodgepodge29 | MATCH | not reached | not reached |
+| hodgepodge19 | MATCH | MATCH | not reached |
+| ghm_circle_toroidal | MATCH | MATCH | not reached |
+| ghm_vn_toroidal | MATCH | MATCH | not reached |
+| ghm_moore_cylindrical | MATCH | MATCH | not reached |
+| ap_toroidal | MATCH | MATCH | MATCH |
 
 ## Legacy VHDL (Tasks 22 and 23)
 

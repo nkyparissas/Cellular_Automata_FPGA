@@ -22,6 +22,8 @@ from ca_model.grids import load_seed, save_png  # noqa: E402
 from ca_model.step import step  # noqa: E402
 from gen_cfg import frame_to_hex, gen_cfg_svh, hex_to_frame  # noqa: E402
 
+MAX_GENS = 200
+
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -30,7 +32,12 @@ def main(argv=None) -> int:
     ap.add_argument("--dump-every", type=int, default=0, help="dump period (default: last generation only)")
     ap.add_argument("--data-w", type=int, default=128)
     ap.add_argument("--threads", type=int, default=1, help="Verilator --threads")
+    ap.add_argument("--allow-long", action="store_true",
+                    help=f"permit more than {MAX_GENS} generations (full-size runs take hours)")
     args = ap.parse_args(argv)
+    if args.gens > MAX_GENS and not args.allow_long:
+        ap.error(f"RTL runs are limited to {MAX_GENS} generations; use the golden model "
+                 f"(ca_model.run) for longer horizons or pass --allow-long")
 
     cfg = config.load(args.config)
     gx, gy = cfg["grid"]
