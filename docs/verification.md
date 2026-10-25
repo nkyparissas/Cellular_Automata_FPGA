@@ -7,13 +7,13 @@ Command: `PYTHONPATH=model python3 -m ca_model.run --config configs/<name>.json 
 | Experiment | Seed | Setting | ms/gen | User verdict (2026-10-24) |
 |---|---|---|---|---|
 | hodgepodge29 | hodgepodge29_seed.bmp, white = 251 | N=29 Moore, G=105, K=5, toroidal | 1436 | looks right |
-| hodgepodge19 | see below | N=19 Moore, G=60, K=3, toroidal | 426 (single run) | first version rejected; re-run pending review |
+| hodgepodge19 | see below | N=19 Moore, G=60, K=3, toroidal | 426 (single run) | first version rejected; grid_custom re-run looks right (2026-10-25) |
 | ghm_circle_toroidal | ghm_spirals.bmp (indices) | N=29 circle, T=5, STATES=15, E=1 | 957 | looks right |
 | ghm_vn_toroidal | ghm_spirals.bmp (indices) | N=29 von Neumann, T=5, STATES=15, E=1 | 956 | looks right |
 | ghm_moore_cylindrical | ghm_spirals.bmp (indices) | N=29 Moore, legacy cylindrical | 930 | looks right |
 | ap_toroidal | ap_random.bmp, white = 1 | N=21 legacy AP mask (row, column), interval 20..23 / 59..100 | 1573 | looks right |
 
-Hodgepodge 19x19: the first run started from `seed.bmp` (G=48) and did not self-organise, which the legacy `READ ME.txt` also records ("We are yet to find an initial seed that leads to auto-organization. grid_custom works for G = 47 ... 60, G = 60 converges"). The legacy 19x19 result was produced from `grid_custom.txt`, so the configuration now starts from `data/seeds/hodgepodge19_grid_custom.png` (a lossless copy of that text grid) with G=60, K=3; it forms spirals like the legacy result and was run to 2000 generations.
+Hodgepodge 19x19: the first run started from `seed.bmp` (G=48) and did not self-organise, which the legacy `READ ME.txt` also records ("We are yet to find an initial seed that leads to auto-organization. grid_custom works for G = 47 ... 60, G = 60 converges"). The legacy 19x19 result was produced from `grid_custom.txt`, so the configuration now starts from `data/seeds/hodgepodge19_grid_custom.png` (a lossless copy of that text grid) with G=60, K=3; it forms spirals like the legacy result and was run to 2000 generations; the user confirmed this run on 2026-10-25.
 
 ## RTL experiments at full size (Task 16)
 
