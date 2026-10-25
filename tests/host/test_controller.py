@@ -4,6 +4,7 @@ import numpy as np
 from ca_host.controller import CAController
 from ca_host.simdev import SimDevice
 from ca_model.step import step
+from timed_device import TimedSimDevice
 
 
 def test_controller_sim_matches_model(small_cfg, small_seed):
@@ -19,6 +20,26 @@ def test_controller_sim_matches_model(small_cfg, small_seed):
         assert ctl.wait_frame(timeout=1.0) == g
         exp = step(exp, small_cfg)
         assert np.array_equal(ctl.read_frame(), exp)
+
+
+def test_load_grid_while_a_pass_runs(small_cfg, small_seed):
+    """Reloading a seed while a pass is in flight (display boards, AUTO, scripts)
+    must still leave generation 0 with the new seed in the front buffer."""
+    dev = TimedSimDevice(small_cfg, pass_len=5)
+    ctl = CAController(dev, small_cfg)
+    ctl.load_grid(small_seed)
+    ctl.set_frame_repeat(0)
+    ctl.start()
+    ctl.request_frame()
+    assert dev.active_left, "a pass should be in flight"
+    new_seed = np.roll(small_seed, 5, axis=1)
+    ctl.load_grid(new_seed)
+    assert ctl.generation() == 0
+    assert np.array_equal(ctl.read_frame(), new_seed)
+    ctl.start()
+    ctl.request_frame()
+    assert ctl.wait_frame(timeout=1.0) == 1
+    assert np.array_equal(ctl.read_frame(), step(new_seed, small_cfg))
 
 
 def test_frame_repeat_cadence(small_cfg, small_seed):

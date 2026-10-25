@@ -23,14 +23,21 @@ close $fh
 read_verilog -sv $board_dir/top_nexys4ddr.sv
 read_xdc $board_dir/nexys4ddr.xdc
 
-# Clocks: 200 MHz (MIG reference and engine), 325 MHz (MIG system), 148.5 MHz (1080p60 pixel).
+# Clocks: 200 MHz (MIG reference and engine) and 325 MHz (MIG system) from one MMCM
+# (VCO 975 MHz, CLKOUT0 4.875, CLKOUT1 3), 148.5 MHz (1080p60 pixel) from a second one
+# (VCO 928.125 MHz, CLKOUT0 6.25). One MMCM cannot produce all three exactly (the best
+# compromise is 3% off), so this follows the legacy design's two wizards on CLK100MHZ.
 create_ip -name clk_wiz -vendor xilinx.com -library ip -module_name clk_wiz_ca -dir $out/ip
 set_property -dict [list \
   CONFIG.PRIM_IN_FREQ {100.000} \
   CONFIG.CLK_OUT1_PORT {clk_ref_200} CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {200.000} \
   CONFIG.CLKOUT2_USED {true} CONFIG.CLK_OUT2_PORT {clk_sys_325} CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {325.000} \
-  CONFIG.CLKOUT3_USED {true} CONFIG.CLK_OUT3_PORT {clk_pix_148} CONFIG.CLKOUT3_REQUESTED_OUT_FREQ {148.500} \
   CONFIG.USE_RESET {true} CONFIG.RESET_TYPE {ACTIVE_HIGH} CONFIG.USE_LOCKED {true}] [get_ips clk_wiz_ca]
+create_ip -name clk_wiz -vendor xilinx.com -library ip -module_name clk_wiz_pix -dir $out/ip
+set_property -dict [list \
+  CONFIG.PRIM_IN_FREQ {100.000} \
+  CONFIG.CLK_OUT1_PORT {clk_pix_148} CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {148.500} \
+  CONFIG.USE_RESET {true} CONFIG.RESET_TYPE {ACTIVE_HIGH} CONFIG.USE_LOCKED {true}] [get_ips clk_wiz_pix]
 
 # DDR2 controller with an AXI4 slave (settings in ip/mig_ddr2_axi.prj).
 create_ip -name mig_7series -vendor xilinx.com -library ip -module_name mig_ddr2_axi -dir $out/ip

@@ -48,7 +48,8 @@ module ca_regs
   assign buf1_addr_o = ADDR_W'(buf1_q);
 
   // A write is taken when address and data are both present and no response
-  // is pending; AW and W are acknowledged together.
+  // is pending; AW and W are acknowledged together, and BVALID (RVALID) rises
+  // only after the AW/W (AR) handshake has completed (AXI4 A3.3.1).
   assign wr_go = axil_req_i.aw_valid && axil_req_i.w_valid && !axil_resp_o.b_valid;
   assign rd_go = axil_req_i.ar_valid && !axil_resp_o.r_valid;
   assign waddr = axil_req_i.aw.addr[7:0];
@@ -102,12 +103,15 @@ module ca_regs
       axil_resp_o.aw_ready <= 1'b0;
       axil_resp_o.w_ready  <= 1'b0;
       axil_resp_o.ar_ready <= 1'b0;
-      // Write channel: acknowledge AW/W in the cycle after both are seen.
+      // Write channel: acknowledge AW/W in the cycle after both are seen (the
+      // master holds them until then); respond once that handshake is done.
+      if (axil_resp_o.aw_ready) begin
+        axil_resp_o.b_valid <= 1'b1;
+        axil_resp_o.b.resp  <= '0;
+      end
       if (wr_go && !axil_resp_o.aw_ready) begin
         axil_resp_o.aw_ready <= 1'b1;
         axil_resp_o.w_ready  <= 1'b1;
-        axil_resp_o.b_valid  <= 1'b1;
-        axil_resp_o.b.resp   <= '0;
         unique case (waddr)
           REG_CTRL: begin
             if (wstrb[0]) begin
@@ -132,10 +136,10 @@ module ca_regs
         endcase
       end
       if (axil_resp_o.b_valid && axil_req_i.b_ready) axil_resp_o.b_valid <= 1'b0;
-      // Read channel.
+      // Read channel: the data is captured with ARREADY, RVALID follows the handshake.
+      if (axil_resp_o.ar_ready) axil_resp_o.r_valid <= 1'b1;
       if (rd_go && !axil_resp_o.ar_ready) begin
         axil_resp_o.ar_ready <= 1'b1;
-        axil_resp_o.r_valid  <= 1'b1;
         axil_resp_o.r.data   <= rdata;
         axil_resp_o.r.resp   <= '0;
       end

@@ -80,7 +80,7 @@ module ca_video_out #(
   logic              synced, shown;   // shown: this frame is being displayed
   logic [PW-1:0]     pix;
   logic [DATA_W-1:0] word;
-  logic              need, have, drop;
+  logic              need, have, drop, shown_next;
 
   assign need = active && pix == '0;                       // a new word is due now
   assign have = f_valid && (frame_start ? f_user : !f_user);
@@ -88,7 +88,6 @@ module ca_video_out #(
   assign drop = !shown && f_valid && !f_user && !(frame_start && synced);
   assign f_ready = (need && shown_next && have) || drop;
 
-  logic shown_next;
   always_comb begin
     shown_next = shown;
     if (frame_start) shown_next = f_valid && f_user;

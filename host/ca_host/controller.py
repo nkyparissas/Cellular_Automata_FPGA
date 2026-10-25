@@ -48,14 +48,32 @@ class CAController:
             cur |= 1 << regs.CTRL_RESET_STATE
         self.dev.write_reg(regs.REG_CTRL, cur)
 
+    def _status(self, bit: int) -> bool:
+        return bool(self.dev.read_reg(regs.REG_STATUS) >> bit & 1)
+
+    def _wait_idle(self, timeout: float) -> None:
+        """Wait until no pass is active (RUN must already be clear)."""
+        end = time.monotonic() + timeout
+        while self._status(regs.ST_BUSY):
+            if time.monotonic() > end:
+                raise TimeoutError("CA core did not finish its pass")
+            time.sleep(0.0005)
+
     # ------------------------------------------------------------ setup
-    def load_grid(self, grid: np.ndarray) -> None:
-        """Stop, reset the generation state and upload the seed (into both
-        buffers for the legacy cylindrical/rectangular modes)."""
+    def load_grid(self, grid: np.ndarray, timeout: float = 5.0) -> None:
+        """Stop, wait for a pass in flight to end, reset the generation state
+        and upload the seed (into both buffers for the legacy
+        cylindrical/rectangular modes). RESET_STATE is honoured only when no
+        pass runs, and a pass in flight would still read and write the
+        buffers, so the upload waits for it."""
         gx, gy = self.cfg["grid"]
         if np.asarray(grid).shape != (gy, gx):
             raise ValueError(f"grid shape {np.asarray(grid).shape}, expected {(gy, gx)}")
-        self._ctrl(run=False, auto=False, reset_state=True)
+        self._ctrl(run=False, auto=False)
+        self._wait_idle(timeout)
+        self._ctrl(reset_state=True)
+        if self._status(regs.ST_FRONT) or self.dev.read_reg(regs.REG_GEN_COUNT) != 0:
+            raise IOError("CA core did not accept RESET_STATE")
         data = pack_frame(grid, self.cfg["cell_w"])
         b0, b1 = self._buffers()
         self.dev.write_mem(b0, data)
@@ -86,7 +104,9 @@ class CAController:
         self.dev.write_reg(regs.REG_FRAME_REQ, 1)
 
     def wait_frame(self, timeout: float = 5.0) -> int:
-        """Wait until no pass is running or pending; return GEN_COUNT."""
+        """Wait until no pass is running or pending; return GEN_COUNT. Only for
+        host-paced cores (XDMA, simulation): where a consumer requests passes
+        (display boards) STATUS is never idle while RUN is set, use snapshot()."""
         end = time.monotonic() + timeout
         while True:
             st = self.dev.read_reg(regs.REG_STATUS)
@@ -98,6 +118,26 @@ class CAController:
 
     def generation(self) -> int:
         return self.dev.read_reg(regs.REG_GEN_COUNT)
+
+    def snapshot(self, timeout: float = 5.0) -> tuple[int, np.ndarray]:
+        """Return (GEN_COUNT, frame) while passes keep running, as on display
+        boards. PAUSE stops commits from the next pass on, so once no pass is
+        active or the pass running when PAUSE was set has ended, the front
+        buffer is stable for as long as the read takes. The previous PAUSE
+        setting is restored afterwards."""
+        was_paused = bool(self.dev.read_reg(regs.REG_CTRL) >> regs.CTRL_PAUSE & 1)
+        self._ctrl(pause=True)
+        try:
+            p0 = self.dev.read_reg(regs.REG_PASS_COUNT)
+            end = time.monotonic() + timeout
+            while self._status(regs.ST_BUSY) and self.dev.read_reg(regs.REG_PASS_COUNT) == p0:
+                if time.monotonic() > end:
+                    raise TimeoutError("CA core pass did not end")
+                time.sleep(0.0005)
+            return self.generation(), self.read_frame()
+        finally:
+            if not was_paused:
+                self._ctrl(pause=False)
 
     def read_frame(self) -> np.ndarray:
         front = self.dev.read_reg(regs.REG_STATUS) >> regs.ST_FRONT & 1

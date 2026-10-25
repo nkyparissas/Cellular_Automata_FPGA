@@ -9,7 +9,7 @@ A portable SystemVerilog framework for simulating cellular automata with large n
 | Core RTL (`rtl/`) | complete; lint clean (Verilator `-Wall`); bit-exact against the golden model in unit, subsystem and integration tests, and at full 1920x1080 size for the six legacy experiments (see `docs/verification.md`) |
 | Rules | Hodgepodge machine, Greenberg-Hastings, interval rule (Artificial Physics); masks: square, von Neumann, legacy circle, legacy Artificial Physics |
 | Display variant (`boards/nexys4ddr/`) | system simulated; board top lints against IP stubs; Vivado flow unverified |
-| PCIe variant (`boards/xdma_template/`) | generic template; module reference lints; block-design script unverified |
+| PCIe variant (`boards/xdma_template/`) | generic template; the Verilog module reference lints and elaborates under slang; block-design script unverified |
 | Host software (`host/ca_host/`) | XDMA, UART and simulated transports, controller, viewer and CLI; tested against the simulated device and fake device nodes |
 | Legacy VHDL | reviewed and co-simulated in GHDL; findings in `docs/legacy_vhdl_findings.md` |
 

@@ -2,6 +2,8 @@
 //   +mem_stall=<0..95>  percentage of cycles a ready/valid is withheld
 //   +mem_lat=<n>        maximum extra cycles before the first R beat or a B
 //   +mem_seed=<n>       random seed
+//   +mem_aw_after_w     raise AWREADY only after WVALID has been seen (a slave may
+//                       wait for WVALID before AWREADY, AXI4 A3.3.1)
 // Checks: INCR bursts, full-width size, aligned addresses, no 4 KB crossing,
 // WLAST on the last beat, AW/W/AR payload stable while valid and not ready,
 // addresses inside the memory.
@@ -36,11 +38,13 @@ module axi_mem_model #(
   longint unsigned now = 0;
   int unsigned seed;
   int unsigned writes = 0, reads = 0;
+  bit          aw_after_w = 0;
 
   initial begin
     void'($value$plusargs("mem_stall=%d", stall));
     void'($value$plusargs("mem_lat=%d", lat));
     if ($value$plusargs("mem_seed=%d", seed)) void'($urandom(seed));
+    aw_after_w = $test$plusargs("mem_aw_after_w");
   end
 
   function automatic bit roll();
@@ -88,7 +92,7 @@ module axi_mem_model #(
         check_burst("AW", req_i.aw.addr, req_i.aw.len, req_i.aw.burst, req_i.aw.size);
         aw_q.push_back('{req_i.aw.addr, req_i.aw.len, req_i.aw.id, 0});
       end
-      resp_o.aw_ready <= roll();
+      resp_o.aw_ready <= roll() && (!aw_after_w || req_i.w_valid);
       // W (accepted only once its AW is known)
       if (req_i.w_valid && resp_o.w_ready) begin
         automatic burst_t b = aw_q[0];

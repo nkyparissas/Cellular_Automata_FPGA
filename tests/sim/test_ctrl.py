@@ -15,3 +15,9 @@ def tb_ctrl():
 @pytest.mark.parametrize("case", CASES)
 def test_ctrl(tb_ctrl, case):
     rtlsim.run(tb_ctrl, {"case": case})
+
+
+@pytest.mark.parametrize("case", ["regs_rw", "repeat_cadence", "reset_state"])
+def test_ctrl_axil_always_ready(tb_ctrl, case):
+    """BREADY/RREADY held high from the start: responses must still follow the handshakes."""
+    rtlsim.run(tb_ctrl, {"case": case, "axil_early": None})

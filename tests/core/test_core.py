@@ -26,6 +26,21 @@ def test_core_memory_stalls(aclk_ps, eclk_ps, tmp_path):
     check_against_model(cfg, seed, frames)
 
 
+def test_core_16bit_cells(tmp_path):
+    """Wide cells end to end (model, configuration, hex frames, RTL): values above 255 survive."""
+    cfg = make_cfg("hodgepodge", "toroidal", 5, 16)
+    seed, frames = run_core(cfg, 128, 3, tmp_path)
+    assert seed.max() > 255
+    check_against_model(cfg, seed, frames)
+
+
+def test_core_slave_waits_for_wvalid(tmp_path):
+    """A memory that raises AWREADY only after WVALID (legal AXI4) must not deadlock the writer."""
+    cfg = make_cfg("interval", "toroidal", 3, 4)
+    seed, frames = run_core(cfg, 64, 3, tmp_path, plusargs={"mem_aw_after_w": 1, "mem_stall": 30})
+    check_against_model(cfg, seed, frames)
+
+
 def test_core_consumer_backpressure(tmp_path):
     cfg = make_cfg("ghm", "zero", 5, 4)
     seed, frames = run_core(cfg, 64, 3, tmp_path, plusargs={"sink_req": 1, "sink_stall": 90})

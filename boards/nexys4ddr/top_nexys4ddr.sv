@@ -35,10 +35,13 @@ module top_nexys4ddr (
   localparam int unsigned MID_W = 2;
 
   // ------------------------------------------------------------- clocks
-  logic clk_ref_200, clk_sys_325, clk_pix_148, clk_locked;
+  // Two MMCMs, as in the legacy design: one cannot produce 200, 325 and 148.5 MHz exactly.
+  logic clk_ref_200, clk_sys_325, clk_pix_148, clk_locked, pix_locked;
   clk_wiz_ca i_clk (
     .clk_in1(CLK100MHZ), .reset(!CPU_RESETN), .locked(clk_locked),
-    .clk_ref_200(clk_ref_200), .clk_sys_325(clk_sys_325), .clk_pix_148(clk_pix_148));
+    .clk_ref_200(clk_ref_200), .clk_sys_325(clk_sys_325));
+  clk_wiz_pix i_clk_pix (
+    .clk_in1(CLK100MHZ), .reset(!CPU_RESETN), .locked(pix_locked), .clk_pix_148(clk_pix_148));
 
   logic ui_clk, ui_rst, calib_done, mmcm_locked, sys_ok;
   assign sys_ok = clk_locked && CPU_RESETN;
@@ -83,7 +86,7 @@ module top_nexys4ddr (
   logic [23:0] rgb;
   logic run_rst_n, pix_rst_n, eng_rst_n;
   assign run_rst_n = !ui_rst && calib_done;
-  ca_reset_sync i_prst (.clk_i(clk_pix_148), .arst_ni(run_rst_n), .rst_no(pix_rst_n));
+  ca_reset_sync i_prst (.clk_i(clk_pix_148), .arst_ni(run_rst_n && pix_locked), .rst_no(pix_rst_n));
   ca_reset_sync i_erst (.clk_i(clk_ref_200), .arst_ni(run_rst_n), .rst_no(eng_rst_n));
 
   ca_display_system #(.GRID_X(GRID_X), .GRID_Y(GRID_Y), .CELL_W(CELL_W), .NBH(NBH),

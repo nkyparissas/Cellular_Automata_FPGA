@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from ca_model.grids import load_seed, pack_frame, unpack_frame, to_rgb
+from ca_model.grids import cell_dtype, load_seed, pack_frame, unpack_frame, to_rgb
 
 ROOT = Path(__file__).resolve().parents[2]
 SEEDS = ROOT / "data" / "seeds"
@@ -54,14 +54,23 @@ def test_binary_mode_requires_value():
         load_seed(SEEDS / "ap_random.bmp", "binary")
 
 
-@pytest.mark.parametrize("cell_w", [4, 8])
+@pytest.mark.parametrize("cell_w", [1, 2, 4, 8, 16, 32])
 def test_pack_roundtrip(cell_w):
-    g = rng.integers(0, 2**cell_w, (6, 64), dtype=np.uint8)
-    assert np.array_equal(unpack_frame(pack_frame(g, cell_w), 64, 6, cell_w), g)
+    g = rng.integers(0, 2**cell_w, (6, 64), dtype=np.int64).astype(cell_dtype(cell_w))
+    back = unpack_frame(pack_frame(g, cell_w), 64, 6, cell_w)
+    assert back.dtype == cell_dtype(cell_w) and np.array_equal(back, g)
+    assert len(pack_frame(g, cell_w)) == 6 * 64 * cell_w // 8
 
 
 def test_pack_nibble_order():
     assert pack_frame(np.array([[1, 2]], np.uint8), 4) == bytes([0x21])
+
+
+def test_pack_sub_nibble_and_wide_order():
+    # cell x at bits [x*cell_w +: cell_w] of the little-endian row
+    assert pack_frame(np.array([[1, 2, 3, 0]], np.uint8), 2) == bytes([0x39])
+    assert pack_frame(np.array([[1, 0, 1, 1, 0, 0, 0, 1]], np.uint8), 1) == bytes([0x8D])
+    assert pack_frame(np.array([[0x1234, 0xABCD]], np.uint16), 16) == bytes([0x34, 0x12, 0xCD, 0xAB])
 
 
 def test_pack_byte_order():

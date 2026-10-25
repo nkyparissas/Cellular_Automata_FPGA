@@ -2,11 +2,11 @@
 
 A starting point for any Xilinx board with a PCIe edge connector and on-board DDR. The host reads and writes the board DDR through the XDMA DMA channels (memory-mapped mode) and controls the core through the XDMA AXI-Lite BAR; the core's consumer handshake is the `FRAME_REQ` register.
 
-**Status: unverified template.** It was written without Vivado and without a target board. `ca_core_xdma.sv` lints against the project RTL (`make lint-boards`); `bd_ca_xdma.tcl` has not been run.
+**Status: unverified template.** It was written without Vivado and without a target board. `ca_core_xdma.v` lints against the project RTL (`make lint-boards`) and elaborates under slang (`tests/test_boards_static.py`); `bd_ca_xdma.tcl` has not been run.
 
 ## Files
 
-* `ca_core_xdma.sv` - block-design module reference: `ca_core_flat` with the configuration from `ca_cfg.svh`, the frame stream always accepted, `pass_done` exported for an XDMA user interrupt.
+* `ca_core_xdma.v` - block-design module reference: `ca_core_flat` with the configuration from `ca_cfg.vh` (Verilog macros written by `tools/gen_cfg.py`), the frame stream always accepted, `pass_done` exported for an XDMA user interrupt. It is Verilog-2001 because Vivado does not accept a SystemVerilog top for a module reference (UG994, "Limitations of the Module Reference Feature").
 * `bd_ca_xdma.tcl` - creates the project and block design: XDMA (AXI-MM, 1 H2C + 1 C2H channel, 64 KB AXI-Lite BAR), a DDR4 controller (via board automation), two SmartConnects, a clocking wizard for the engine clock, and the core.
 
 ## Adapting

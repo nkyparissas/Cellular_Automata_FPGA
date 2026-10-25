@@ -63,12 +63,19 @@ module ca_rule_hodgepodge #(
   logic [33:0] inf_g;
   assign inf_g = 34'(q_inf) + 34'(params_i[ca_pkg::HP_G]);
 
-  // The A/K saturation test is constant for small neighbourhoods.
-  /* verilator lint_off CMPCONST */
+  // A / K saturates to MAX when K = 0 (a zero divisor yields MAX, whatever the
+  // divider's all-ones quotient is at AW bits) and, when A can exceed MAX
+  // (AW > CELL_W), when the quotient does. Parameters are stable during a pass.
+  logic hea_sat;
+  if (AW > CELL_W) begin : g_hea_cmp
+    assign hea_sat = params_i[ca_pkg::HP_K] == '0 || q_hea_d > AW'(MAXV);
+  end else begin : g_hea_k0
+    assign hea_sat = params_i[ca_pkg::HP_K] == '0;
+  end
+
   always_ff @(posedge clk_i) begin
-    if (c_d == '0)        cell_o <= (q_hea_d > AW'(MAXV)) ? MAXV : CELL_W'(q_hea_d);
+    if (c_d == '0)        cell_o <= hea_sat ? MAXV : CELL_W'(q_hea_d);
     else if (c_d == MAXV) cell_o <= '0;
     else                  cell_o <= (inf_g > 34'(MAXV)) ? MAXV : CELL_W'(inf_g);
   end
-  /* verilator lint_on CMPCONST */
 endmodule

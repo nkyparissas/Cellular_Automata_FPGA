@@ -24,7 +24,8 @@ clean:
 # Board tops lint against stub IP modules (MIG, clocking wizard).
 lint-boards:
 	$(PYTHON) tools/gen_cfg.py --config configs/hodgepodge29.json --data-w 128 --out build/lint_cfg/ca_cfg.svh
+	$(PYTHON) tools/gen_cfg.py --config configs/hodgepodge29.json --data-w 512 --out build/lint_cfg/ca_cfg.vh
 	$(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg \
 	  -y boards/nexys4ddr/stubs --top-module top_nexys4ddr boards/nexys4ddr/top_nexys4ddr.sv
 	$(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg \
-	  --top-module ca_core_xdma boards/xdma_template/ca_core_xdma.sv
+	  --top-module ca_core_xdma boards/xdma_template/ca_core_xdma.v

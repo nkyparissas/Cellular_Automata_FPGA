@@ -30,10 +30,18 @@ All settings are sampled when a pass starts, so writes during a pass take effect
 | ghm (1) | T | STATES | E | | |
 | interval (2) | LO1 | HI1 | LO2 | HI2 | ALIVE |
 
-## Typical host sequence (XDMA)
+## Loading a seed
 
-1. Write the seed to `BUF0` (and `BUF1` in the legacy cylindrical and rectangular modes) through the H2C channel.
+Clear RUN (and AUTO), poll `STATUS` until BUSY is clear (a pass in flight still reads and writes the buffers, and RESET_STATE is ignored while it runs), write `CTRL.RESET_STATE`, check that FRONT and GEN_COUNT read 0, then write the seed to `BUF0` (and `BUF1` in the legacy cylindrical and rectangular modes). `CAController.load_grid()` implements this.
+
+## Host-paced cores (XDMA)
+
+1. Load the seed as above, through the H2C channel.
 2. Write `CTRL = RUN`.
 3. Write `FRAME_REQ`, poll `STATUS` until BUSY and PENDING are clear, read `STATUS.FRONT`, read the frame from that buffer through the C2H channel. Repeat.
 
-`host/ca_host/controller.py` implements this sequence for every transport.
+`CAController.request_frame()`, `wait_frame()` and `read_frame()` implement step 3.
+
+## Consumer-paced cores (display boards)
+
+The display requests a pass every frame, so with RUN set passes run back to back and `STATUS` never reads idle; `wait_frame()` must not be used. The host loads the seed, sets RUN and steers the run (FRAME_REPEAT, PAUSE, rule parameters). To read the current generation it sets PAUSE (passes keep running and streaming but no longer commit), waits until BUSY is clear or PASS_COUNT has advanced (the pass running when PAUSE was set has ended), reads `GEN_COUNT`, `STATUS.FRONT` and that buffer, and restores PAUSE. `CAController.snapshot()` implements this, and `python3 -m ca_host.cli --transport uart` uses it for its `s` command.

@@ -13,6 +13,7 @@ MODES = {
     "stall":   (64, 8, 4, 5, 64, 0x2000, {"mem_stall": 60, "mem_lat": 30, "src_gap": 50}),
     "4k":      (1000, 6, 8, 3, 64, 0x0FC8, {"mem_stall": 20}),
     "discard": (64, 8, 8, 3, 64, 0x2000, {"discard": 1}),
+    "aw_after_w": (64, 8, 8, 5, 64, 0x2000, {"mem_aw_after_w": 1, "mem_stall": 30}),
 }
 CASES = [(b, m) for b in BOUNDARIES for m in MODES]
 

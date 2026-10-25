@@ -38,5 +38,5 @@ set_property -dict {PACKAGE_PIN N14 IOSTANDARD LVCMOS33} [get_ports {LED[3]}]
 ## FIFOs/RAMs (gray-coded pointers), so the clock groups are asynchronous.
 set_clock_groups -asynchronous \
   -group [get_clocks -of_objects [get_pins i_clk/inst/*/CLKOUT0]] \
-  -group [get_clocks -of_objects [get_pins i_clk/inst/*/CLKOUT2]] \
+  -group [get_clocks -of_objects [get_pins i_clk_pix/inst/*/CLKOUT0]] \
   -group [get_clocks -include_generated_clocks -of_objects [get_pins i_mig/u_mig_ddr2_axi_mig/u_ddr2_infrastructure/gen_mmcm.mmcm_i/CLKFBOUT]]

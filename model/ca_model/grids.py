@@ -55,30 +55,41 @@ def load_seed(path, mode: str, value: int | None = None) -> np.ndarray:
     return lut[idx].astype(np.uint8)
 
 
+# Cell widths for which DATA_W / CELL_W can be a power of two (rtl/top/ca_core.sv).
+CELL_WIDTHS = (1, 2, 4, 8, 16, 32)
+
+
+def cell_dtype(cell_w: int):
+    """Smallest unsigned numpy type that holds one ``cell_w``-bit cell."""
+    if cell_w not in CELL_WIDTHS:
+        raise ValueError(f"unsupported cell width {cell_w} (supported: {CELL_WIDTHS})")
+    return np.uint8 if cell_w <= 8 else np.uint16 if cell_w == 16 else np.uint32
+
+
 def pack_frame(grid: np.ndarray, cell_w: int) -> bytes:
     """Pack a (Y, X) grid into the memory layout used by the hardware."""
-    g = np.ascontiguousarray(grid, dtype=np.uint8)
-    if cell_w == 8:
-        return g.tobytes()
-    if cell_w == 4:
-        if g.shape[1] % 2:
-            raise ValueError("4-bit frames need an even number of columns")
-        return ((g[:, 1::2] << 4) | (g[:, 0::2] & 0x0F)).astype(np.uint8).tobytes()
-    raise ValueError(f"unsupported cell width {cell_w}")
+    dt = cell_dtype(cell_w)
+    if cell_w >= 8:
+        return np.ascontiguousarray(grid, dtype=np.dtype(dt).newbyteorder("<")).tobytes()
+    per = 8 // cell_w
+    g = np.asarray(grid).astype(np.uint8)
+    if g.shape[1] % per:
+        raise ValueError(f"{cell_w}-bit frames need a multiple of {per} columns")
+    shifts = (np.arange(per) * cell_w).astype(np.uint8)
+    cells = (g & ((1 << cell_w) - 1)).reshape(g.shape[0], -1, per) << shifts
+    return np.bitwise_or.reduce(cells, axis=2).astype(np.uint8).tobytes()
 
 
 def unpack_frame(data: bytes, grid_x: int, grid_y: int, cell_w: int) -> np.ndarray:
     """Inverse of :func:`pack_frame`."""
-    raw = np.frombuffer(data, dtype=np.uint8)
-    if cell_w == 8:
-        return raw[: grid_x * grid_y].reshape(grid_y, grid_x).copy()
-    if cell_w == 4:
-        raw = raw[: grid_x * grid_y // 2].reshape(grid_y, grid_x // 2)
-        out = np.empty((grid_y, grid_x), dtype=np.uint8)
-        out[:, 0::2] = raw & 0x0F
-        out[:, 1::2] = raw >> 4
-        return out
-    raise ValueError(f"unsupported cell width {cell_w}")
+    dt = cell_dtype(cell_w)
+    if cell_w >= 8:
+        raw = np.frombuffer(data, dtype=np.dtype(dt).newbyteorder("<"), count=grid_x * grid_y)
+        return raw.reshape(grid_y, grid_x).astype(dt)
+    per = 8 // cell_w
+    raw = np.frombuffer(data, dtype=np.uint8, count=grid_x * grid_y // per).reshape(grid_y, grid_x // per, 1)
+    shifts = (np.arange(per) * cell_w).astype(np.uint8)
+    return ((raw >> shifts) & ((1 << cell_w) - 1)).reshape(grid_y, grid_x).astype(np.uint8)
 
 
 def palette_lut(cell_w: int, palette: str) -> np.ndarray:

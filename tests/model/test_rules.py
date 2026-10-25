@@ -111,3 +111,16 @@ def test_step_keeps_frozen_rows():
     nxt = step(g, cfg)
     assert np.array_equal(nxt[0], g[0]) and np.array_equal(nxt[-1], g[-1])
     assert nxt.dtype == np.uint8
+
+
+def test_step_keeps_wide_cells():
+    """16-bit cells (e.g. fixed-point Lenia states) keep their full range."""
+    g = np.random.default_rng(4).choice([0, 1, 300, 40000, 65535], size=(10, 12)).astype(np.uint16)
+    hp = {"rule": "hodgepodge", "nbh": 3, "mask": "moore", "boundary": "toroidal", "cell_w": 16,
+          "params": {"G": 1000, "K": 2}}
+    nxt = step(g, hp)
+    assert nxt.dtype == np.uint16 and np.array_equal(nxt, reference_step(g, hp))
+    assert nxt.max() > 255
+    iv = {"rule": "interval", "nbh": 3, "mask": "moore", "boundary": "toroidal", "cell_w": 16,
+          "params": {"LO1": 0, "HI1": 10**6, "LO2": 0, "HI2": 0, "ALIVE": 1000}}
+    assert (step(g, iv) == 1000).all()

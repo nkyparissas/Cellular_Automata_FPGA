@@ -6,7 +6,6 @@ module clk_wiz_ca (
   input  logic reset,
   output logic locked,
   output logic clk_ref_200,
-  output logic clk_sys_325,
-  output logic clk_pix_148
+  output logic clk_sys_325
 );
 endmodule

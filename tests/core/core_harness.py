@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 
 import rtlsim
+from ca_model.grids import cell_dtype
 from ca_model.step import step
 from gen_cfg import gen_cfg_svh, frame_to_hex, hex_to_frame
 
@@ -25,10 +26,10 @@ def default_params(rule, nbh):
 def random_seed(rule, cell_w, shape, rng):
     maxv = (1 << cell_w) - 1
     if rule == "hodgepodge":
-        return rng.choice([0, 0, 0, 1, maxv // 5, maxv // 2, maxv - 1, maxv], size=shape).astype(np.uint8)
+        return rng.choice([0, 0, 0, 1, maxv // 5, maxv // 2, maxv - 1, maxv], size=shape).astype(cell_dtype(cell_w))
     if rule == "ghm":
-        return rng.choice([0, 0, 0, 1, 1, 2, 7, min(14, maxv)], size=shape).astype(np.uint8)
-    return rng.integers(0, 2, size=shape).astype(np.uint8)
+        return rng.choice([0, 0, 0, 1, 1, 2, 7, min(14, maxv)], size=shape).astype(cell_dtype(cell_w))
+    return rng.integers(0, 2, size=shape).astype(cell_dtype(cell_w))
 
 
 def make_cfg(rule, bnd, nbh, cell_w, grid=(64, 24), mask="moore", params=None):

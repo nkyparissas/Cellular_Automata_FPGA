@@ -43,13 +43,15 @@ module ca_frame_writer #(
   localparam int unsigned SIZE      = $clog2(BYTES);
   localparam int unsigned ROW_BYTES = GRID_X * CELL_W / 8;
 
-  typedef enum logic [2:0] {S_IDLE, S_ROW, S_AW, S_W, S_DISCARD, S_WAIT_B} state_e;
+  // A burst presents AW and its W beats independently (the master must not
+  // wait for AWREADY before WVALID, AXI4 A3.3.1) and ends once both are done.
+  typedef enum logic [2:0] {S_IDLE, S_ROW, S_BURST, S_DISCARD, S_WAIT_B} state_e;
   state_e            state;
   logic [ADDR_W-1:0] base_q, addr;
   logic [OW-1:0]     row;
   logic [CW-1:0]     rem, blen, beat;
   logic [15:0]       b_out;      // bursts awaiting a write response
-  logic              aw_hs, w_hs, b_hs;
+  logic              aw_hs, w_hs, b_hs, aw_done, w_done, aw_fin, w_fin;
 
   // Burst length: remaining beats, MAX_BURST and the distance to 4 KB.
   logic [12:0] to_4k;
@@ -67,18 +69,20 @@ module ca_frame_writer #(
     axi_req_o.aw.size  = 3'(SIZE);
     axi_req_o.aw.burst = 2'b01;
     axi_req_o.aw.cache = 4'b0011;
-    axi_req_o.aw_valid = state == S_AW;
+    axi_req_o.aw_valid = state == S_BURST && !aw_done;
     axi_req_o.w.data   = s_tdata_i;
     axi_req_o.w.strb   = '1;
     axi_req_o.w.last   = beat == blen - 1'b1;
-    axi_req_o.w_valid  = state == S_W && s_tvalid_i;
+    axi_req_o.w_valid  = state == S_BURST && !w_done && s_tvalid_i;
     axi_req_o.b_ready  = 1'b1;
   end
 
-  assign s_tready_o = (state == S_W && axi_resp_i.w_ready) || state == S_DISCARD;
+  assign s_tready_o = (state == S_BURST && !w_done && axi_resp_i.w_ready) || state == S_DISCARD;
   assign aw_hs      = axi_req_o.aw_valid && axi_resp_i.aw_ready;
   assign w_hs       = axi_req_o.w_valid && axi_resp_i.w_ready;
   assign b_hs       = axi_resp_i.b_valid;
+  assign aw_fin     = aw_done || aw_hs;
+  assign w_fin      = w_done || (w_hs && beat == blen - 1'b1);
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
@@ -91,6 +95,8 @@ module ca_frame_writer #(
       b_out    <= '0;
       popped_o <= '0;
       done_o   <= 1'b0;
+      aw_done  <= 1'b0;
+      w_done   <= 1'b0;
     end else begin
       done_o <= 1'b0;
       b_out  <= b_out + 16'(aw_hs) - 16'(b_hs);
@@ -104,25 +110,26 @@ module ca_frame_writer #(
         S_ROW: begin
           addr  <= base_q + ADDR_W'(FIRST + row) * ADDR_W'(ROW_BYTES);
           rem   <= CW'(BPR);
-          state <= S_AW;
-        end
-        S_AW: if (aw_hs) begin
           beat  <= '0;
-          state <= S_W;
+          state <= S_BURST;
         end
-        S_W: if (w_hs) begin
-          if (beat == blen - 1'b1) begin
-            addr <= addr + ADDR_W'(blen) * ADDR_W'(BYTES);
-            rem  <= rem - blen;
+        S_BURST: begin
+          if (aw_hs) aw_done <= 1'b1;
+          if (w_hs) begin
+            if (beat == blen - 1'b1) w_done <= 1'b1;
+            else                     beat   <= beat + 1'b1;
+          end
+          if (aw_fin && w_fin) begin
+            aw_done <= 1'b0;
+            w_done  <= 1'b0;
+            beat    <= '0;
+            addr    <= addr + ADDR_W'(blen) * ADDR_W'(BYTES);
+            rem     <= rem - blen;
             if (rem == blen) begin
               popped_o <= popped_o + 1'b1;
               row      <= row + 1'b1;
               state    <= (row == OW'(O - 1)) ? S_WAIT_B : S_ROW;
-            end else begin
-              state <= S_AW;
             end
-          end else begin
-            beat <= beat + 1'b1;
           end
         end
         S_DISCARD: if (s_tvalid_i) begin

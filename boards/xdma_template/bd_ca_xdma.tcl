@@ -27,7 +27,7 @@ set buf1_addr     0x10000000                     ;# second frame buffer (first o
 set root [file normalize [file dirname [info script]]/../..]
 set out  $root/build/xdma_template
 file mkdir $out
-exec python3 $root/tools/gen_cfg.py --config $root/$config --data-w $data_w --out $out/ca_cfg.svh
+exec python3 $root/tools/gen_cfg.py --config $root/$config --data-w $data_w --out $out/ca_cfg.vh
 exec python3 $root/tools/gen_filelist.py --top ca_core_flat --out $out/files.f
 
 create_project ca_xdma $out/vivado -part $part -force
@@ -35,7 +35,7 @@ if {$board_part ne ""} { set_property board_part $board_part [current_project] }
 set fh [open $out/files.f]
 foreach f [split [string trim [read $fh]] "\n"] { add_files -norecurse $root/$f }
 close $fh
-add_files -norecurse $root/boards/xdma_template/ca_core_xdma.sv
+add_files -norecurse $root/boards/xdma_template/ca_core_xdma.v   ;# module-reference top: Verilog (UG994)
 set_property include_dirs [list $out $root/third_party/axi/include $root/third_party/common_cells/include] [current_fileset]
 update_compile_order -fileset sources_1
 

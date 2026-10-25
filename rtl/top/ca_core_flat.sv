@@ -1,13 +1,16 @@
 // ca_core with Xilinx-style flat AXI4 / AXI4-Lite / AXI4-Stream ports, for
-// Vivado block designs (module reference) and plain RTL board tops.
+// plain RTL board tops and Verilog/VHDL wrappers (a Vivado module reference
+// must be Verilog or VHDL, see boards/xdma_template/ca_core_xdma.v). Every
+// parameter is integral so that such wrappers can set it: BOUNDARY and RULE
+// take the ca_pkg::boundary_e / rule_e values as integers.
 `include "axi/typedef.svh"
 module ca_core_flat #(
   parameter int unsigned          GRID_X               = 64,
   parameter int unsigned          GRID_Y               = 24,
   parameter int unsigned          CELL_W               = 8,
   parameter int unsigned          NBH                  = 5,
-  parameter ca_pkg::boundary_e    BOUNDARY             = ca_pkg::BND_TOROIDAL,
-  parameter ca_pkg::rule_e        RULE                 = ca_pkg::RULE_HODGEPODGE,
+  parameter int unsigned          BOUNDARY             = 32'(ca_pkg::BND_TOROIDAL),
+  parameter int unsigned          RULE                 = 32'(ca_pkg::RULE_HODGEPODGE),
   parameter logic [NBH*NBH-1:0]   MASK                 = '1,
   parameter int unsigned          DATA_W               = 128,
   parameter int unsigned          ADDR_W               = 32,
@@ -108,7 +111,8 @@ module ca_core_flat #(
   axil_req_t  lreq;
   axil_resp_t lresp;
 
-  ca_core #(.GRID_X(GRID_X), .GRID_Y(GRID_Y), .CELL_W(CELL_W), .NBH(NBH), .BOUNDARY(BOUNDARY), .RULE(RULE),
+  ca_core #(.GRID_X(GRID_X), .GRID_Y(GRID_Y), .CELL_W(CELL_W), .NBH(NBH),
+            .BOUNDARY(ca_pkg::boundary_e'(BOUNDARY)), .RULE(ca_pkg::rule_e'(RULE)),
             .MASK(MASK), .DATA_W(DATA_W), .ADDR_W(ADDR_W), .MAX_BURST(MAX_BURST),
             .FIFO_ROWS(FIFO_ROWS), .BUF0_DEFAULT(BUF0_DEFAULT), .BUF1_DEFAULT(BUF1_DEFAULT),
             .FRAME_REPEAT_DEFAULT(FRAME_REPEAT_DEFAULT), .PARAM_DEFAULTS(PARAM_DEFAULTS),
