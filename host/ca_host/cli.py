@@ -10,6 +10,11 @@ every frame. On display boards (UART) the display requests the passes, so the
 CLI loads and starts the run and then takes commands on stdin: '+' faster,
 '-' slower, 'p' pause/resume, 's' snapshot (read under PAUSE), 'q' quit and
 leave the board running, 'x' stop and quit.
+
+Lenia configurations load the kernel and the growth table at start; '[' and
+']' lower and raise mu by 0.001, '{' and '}' lower and raise sigma by 0.0005
+(window keys when host-paced, stdin commands on display boards). Each change
+prints the first generation computed with it.
 """
 import argparse
 import sys
@@ -19,6 +24,21 @@ from ca_model.grids import load_seed
 
 from .controller import CAController
 from .viewer import Viewer
+
+
+MU_STEP, SIGMA_STEP = 0.001, 0.0005
+GROWTH_KEYS = {"[": (-MU_STEP, 0.0), "]": (MU_STEP, 0.0), "{": (0.0, -SIGMA_STEP), "}": (0.0, SIGMA_STEP)}
+
+
+def nudge_growth(ctl: CAController, key: str) -> str | None:
+    """Apply a growth-function key to a Lenia core; return the message to print."""
+    if ctl.cfg["rule"] != "lenia" or key not in GROWTH_KEYS:
+        return None
+    dmu, dsigma = GROWTH_KEYS[key]
+    mu, sigma, T = ctl.growth
+    mu, sigma = mu + dmu, max(sigma + dsigma, SIGMA_STEP)
+    gen = ctl.set_growth(mu, sigma, T)
+    return f"mu={mu:.3f} sigma={sigma:.4f} T={T:g}: growth table active from generation {gen + 1}"
 
 
 def open_device(args, cfg):
@@ -52,6 +72,8 @@ def run_host_paced(ctl: CAController, viewer: Viewer, args) -> int:
             elif key == " ":
                 paused = not paused
                 ctl.set_pause(paused)
+            elif key and (msg := nudge_growth(ctl, key)):
+                print(msg)
             if key:
                 print(f"frame {n}: generation {gen}, FRAME_REPEAT={repeat}, GENS_PER_FRAME={gpf}, paused={paused}")
     except KeyboardInterrupt:
@@ -66,7 +88,8 @@ def run_host_paced(ctl: CAController, viewer: Viewer, args) -> int:
 def run_display_paced(ctl: CAController, viewer: Viewer, args) -> int:
     """Steer a board whose display requests the passes; returns the snapshot count."""
     repeat, paused, n, stopped = args.frame_repeat, False, 0, False
-    print("commands: + faster, - slower, p pause/resume, s snapshot, q quit (board keeps running), x stop and quit")
+    print("commands: + faster, - slower, p pause/resume, s snapshot, q quit (board keeps running), x stop and quit"
+          + (", [ ] mu -/+, { } sigma -/+" if ctl.cfg["rule"] == "lenia" else ""))
     try:
         for line in sys.stdin:
             cmd = line.strip()
@@ -87,6 +110,8 @@ def run_display_paced(ctl: CAController, viewer: Viewer, args) -> int:
                 gen, frame = ctl.snapshot()
                 viewer.show(frame, n)
                 print(f"snapshot {n}: generation {gen}")
+            elif msg := nudge_growth(ctl, cmd):
+                print(msg)
             if cmd:
                 print(f"generation {ctl.generation()}, FRAME_REPEAT={repeat}, paused={paused}")
     except KeyboardInterrupt:
@@ -120,7 +145,12 @@ def main(argv=None) -> int:
         dev._unit = ctl.info()["data_bytes"]
     seed = load_seed(args.seed or cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"), cfg["cell_w"])
     ctl.load_grid(seed)
-    ctl.set_params(cfg["params"])
+    if cfg["rule"] == "lenia":
+        p = cfg["params"]
+        ctl.load_kernel(p["R"], p["beta"])
+        ctl.set_growth(p["mu"], p["sigma"], p["T"])
+    else:
+        ctl.set_params(cfg["params"])
     ctl.set_frame_repeat(args.frame_repeat)
     ctl.set_gens_per_frame(1)
     ctl.start()

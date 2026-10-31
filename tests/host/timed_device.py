@@ -29,6 +29,9 @@ class TimedSimDevice(SimDevice):
             val &= ~(1 << regs.CTRL_RESET_STATE)
         super().write_reg(off, val)
 
+    def _pass_active(self) -> bool:
+        return self.active_left > 0
+
     def _tick(self) -> None:
         if self.display:
             self.pending = True
@@ -36,6 +39,7 @@ class TimedSimDevice(SimDevice):
             self.active_left -= 1
             if self.active_left == 0:
                 self._pass(self.active_commit)
+        self._growth_service()
         self._service()
 
     def _service(self) -> None:

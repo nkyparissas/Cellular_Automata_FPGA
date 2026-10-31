@@ -1,9 +1,14 @@
 """In-process stand-in for a CA core: the register semantics of spec
 Sections 9 and 10 with passes computed by the golden model. Passes run
-synchronously when FRAME_REQ is written; CTRL.AUTO is not modelled."""
+synchronously when FRAME_REQ is written; CTRL.AUTO is not modelled.
+Lenia cores also model the weight chain (KERNEL_DATA accepted only with RUN
+clear and no pass active), the two growth-table banks with their shifts,
+the commit at a pass boundary and GROWTH_GEN (Lenia design spec, Section 6)."""
 import numpy as np
 
+from ca_model import lenia
 from ca_model.grids import pack_frame, unpack_frame
+from ca_model.neigh import Boundary
 from ca_model.rules import PARAM_INDEX, params_vector
 from ca_model.step import step
 
@@ -11,7 +16,7 @@ from . import regs
 from .device import Device
 
 BOUNDARY_ID = {"toroidal": 0, "cylindrical": 1, "rectangular": 2, "zero": 3}
-RULE_ID = {"hodgepodge": 0, "ghm": 1, "interval": 2}
+RULE_ID = {"hodgepodge": 0, "ghm": 1, "interval": 2, "lenia": 3}
 
 
 class SimDevice(Device):
@@ -28,6 +33,14 @@ class SimDevice(Device):
         self.front = self.gen_count = self.pass_count = 0
         self.repeat_cnt = self.ff_left = 0
         self.pending = False
+        self.lenia = cfg["rule"] == "lenia"
+        if self.lenia:
+            w, table, sh = lenia.cfg_kernel(cfg)
+            self.ww = cfg.get("weight_w", lenia.DEFAULT_WEIGHT_W)
+            self.lb = cfg.get("lut_idx_w", lenia.DEFAULT_LUT_IDX_W)
+            self.chain = [int(v) for v in w]
+            self.banks, self.shs = [table.copy(), table.copy()], [sh, sh]
+            self.bank, self.growth_pending, self.growth_gen = 0, False, 0
 
     # ----------------------------------------------------------- memory
     def _ensure(self, end: int) -> None:
@@ -51,7 +64,10 @@ class SimDevice(Device):
             return (self.run << regs.CTRL_RUN) | (self.pause << regs.CTRL_PAUSE) | (self.auto << regs.CTRL_AUTO)
         if off == regs.REG_STATUS:
             busy = self.ff_left > 0 and self.run and not self.pause
-            return (busy << regs.ST_BUSY) | (self.front << regs.ST_FRONT) | (self.pending << regs.ST_PENDING)
+            st = (busy << regs.ST_BUSY) | (self.front << regs.ST_FRONT) | (self.pending << regs.ST_PENDING)
+            if self.lenia:
+                st |= (self.growth_pending << regs.ST_GROWTH_PENDING) | (self.bank << regs.ST_GROWTH_BANK)
+            return st
         if off == regs.REG_FRAME_REPEAT:
             return self.frame_repeat
         if off == regs.REG_GENS_PER_FRAME:
@@ -70,6 +86,13 @@ class SimDevice(Device):
                    (BOUNDARY_ID[c["boundary"]] << 16) | (c["nbh"] << 8) | c["cell_w"]
         if regs.REG_RULE_PARAM0 <= off < regs.REG_RULE_PARAM0 + 32:
             return self.params[(off - regs.REG_RULE_PARAM0) // 4]
+        if self.lenia:
+            if off == regs.REG_LENIA_CFG:
+                return ((c["cell_w"] + 1) << 16) | (self.lb << 12) | (self.ww << 8) | len(self.chain)
+            if off == regs.REG_GROWTH_SHIFT:
+                return self.shs[1 - self.bank]
+            if off == regs.REG_GROWTH_GEN:
+                return self.growth_gen & 0xFFFFFFFF
         return 0
 
     def write_reg(self, off: int, val: int) -> None:
@@ -95,7 +118,38 @@ class SimDevice(Device):
                 self.buf[k] = (self.buf[k] & ~0xFFFFFFFF) | val
         elif regs.REG_RULE_PARAM0 <= off < regs.REG_RULE_PARAM0 + 32:
             self.params[(off - regs.REG_RULE_PARAM0) // 4] = val
+        elif self.lenia:
+            self._lenia_write(off, val)
+        self._growth_service()
         self._service()
+
+    # ------------------------------------------------------------ Lenia
+    def _lenia_write(self, off: int, val: int) -> None:
+        if off == regs.REG_KERNEL_DATA:
+            if not self.run and not self._pass_active():
+                self.chain = self.chain[1:] + [val & ((1 << self.ww) - 1)]
+        elif off == regs.REG_GROWTH_COMMIT:
+            self.growth_pending = True
+        elif self.growth_pending:
+            return                                   # table and shift writes wait for the commit
+        elif off == regs.REG_GROWTH_SHIFT:
+            self.shs[1 - self.bank] = val & 0x3F
+        elif regs.REG_GROWTH_TABLE <= off < regs.REG_GROWTH_TABLE + 0x8000:
+            idx, ew = (off - regs.REG_GROWTH_TABLE) >> 2, self.cfg["cell_w"] + 1
+            if idx < 1 << self.lb:
+                e = val & ((1 << ew) - 1)
+                self.banks[1 - self.bank][idx] = e - (1 << ew) if e >> (ew - 1) else e
+
+    def _pass_active(self) -> bool:
+        """True while a pass runs (passes are instantaneous here)."""
+        return False
+
+    def _growth_service(self) -> None:
+        """Swap the growth-table banks when a commit is pending and no pass runs."""
+        if self.lenia and self.growth_pending and not self._pass_active():
+            self.bank ^= 1
+            self.growth_gen = self.gen_count
+            self.growth_pending = False
 
     # ----------------------------------------------------------- passes
     def _service(self) -> None:
@@ -123,9 +177,14 @@ class SimDevice(Device):
             return
         gx, gy = self.cfg["grid"]
         cw = self.cfg["cell_w"]
-        names = {i: n for n, i in PARAM_INDEX[self.cfg["rule"]].items()}
-        cfg = dict(self.cfg, params={names[i]: v for i, v in enumerate(self.params) if i in names})
         grid = unpack_frame(self.read_mem(self.buf[self.front], self.frame_bytes), gx, gy, cw)
-        self.write_mem(self.buf[1 - self.front], pack_frame(step(grid, cfg), cw))
+        if self.lenia:
+            nxt = lenia.step_lenia(grid, np.array(self.chain), self.banks[self.bank], self.shs[self.bank],
+                                   self.cfg["nbh"], cw, Boundary(self.cfg["boundary"]))
+        else:
+            names = {i: n for n, i in PARAM_INDEX[self.cfg["rule"]].items()}
+            cfg = dict(self.cfg, params={names[i]: v for i, v in enumerate(self.params) if i in names})
+            nxt = step(grid, cfg)
+        self.write_mem(self.buf[1 - self.front], pack_frame(nxt, cw))
         self.front ^= 1
         self.gen_count += 1
