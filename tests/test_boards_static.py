@@ -148,3 +148,21 @@ def test_xdma_template_static():
     r = subprocess.run(["make", "lint-boards"], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "ca_core_xdma" in (ROOT / "Makefile").read_text()
+
+
+def test_ooc_lenia_script():
+    """Out-of-context timing script for the Lenia datapath (run in Vivado by the user; unverified here)."""
+    import gen_filelist
+    here = ROOT / "boards" / "ooc_lenia"
+    tcl = (here / "ooc_lenia.tcl").read_text()
+    assert "xc7a100tcsg324-1" in tcl and "-mode out_of_context" in tcl
+    for rel in re.findall(r"\$here/([\w/]+\.\w+)", tcl):
+        assert (here / rel).is_file(), rel
+    xdc = (here / "ooc_lenia.xdc").read_text()
+    assert re.search(r"create_clock\s+-name\s+eclk\s+-period\s+5\.000\b", xdc)
+    files = gen_filelist.sources_for("ooc_lenia_top", extra_dirs=("boards/ooc_lenia",))
+    assert all(f.is_file() for f in files) and {"ca_rule_lenia.sv", "ooc_lenia_top.sv"} <= {f.name for f in files}
+    r = subprocess.run(["verilator", "--lint-only", "-Wall", "--timing", "rtl/lint.vlt", "-f", "rtl/files.f",
+                        "-y", "boards/ooc_lenia", "--top-module", "ooc_lenia_top", "boards/ooc_lenia/ooc_lenia_top.sv"],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr

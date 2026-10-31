@@ -178,12 +178,12 @@ CASES = [(5, 8), (5, 16), (7, 16), (9, 8), (9, 16)]
 
 @pytest.mark.parametrize("n,cw", CASES, ids=[f"n{n}-c{c}" for n, c in CASES])
 def test_lenia_random_windows(n, cw):
-    run_cocotb("tb_lenia", "test_lenia", {"N": n, "CELL_W": cw}, testcase="cocotb_lenia_random_windows",
+    run_cocotb("tb_lenia", "test_rule_lenia", {"N": n, "CELL_W": cw}, testcase="cocotb_lenia_random_windows",
                plusargs=[f"+seed={n * 10 + cw}"])
 
 
 def test_lenia_full_size_n27():
-    run_cocotb("tb_lenia", "test_lenia", {"N": 27, "CELL_W": 16}, testcase="cocotb_lenia_random_windows",
+    run_cocotb("tb_lenia", "test_rule_lenia", {"N": 27, "CELL_W": 16}, testcase="cocotb_lenia_random_windows",
                plusargs=["+cycles=150", "+seed=27"])
 
 
@@ -196,12 +196,12 @@ def test_lenia_powerup_defaults(tmp_path):
     entries = rng.integers(-(1 << cw), 1 << cw, size=2 << lb)
     init = tmp_path / "growth_init.hex"
     init.write_text("".join(f"{int(e) & ((1 << (cw + 1)) - 1):05x}\n" for e in entries))
-    run_cocotb("tb_lenia", "test_lenia", {"N": n, "CELL_W": cw, "WEIGHT_W": ww, "LUT_IDX_W": lb,
+    run_cocotb("tb_lenia", "test_rule_lenia", {"N": n, "CELL_W": cw, "WEIGHT_W": ww, "LUT_IDX_W": lb,
                                           "KERNEL_DEFAULT": literal, "GROWTH_INIT": f'"{init}"'},
                testcase="cocotb_lenia_powerup_defaults", plusargs=[f"+init_file={init}"])
 
 
 @pytest.mark.parametrize("cw", [8, 16])
 def test_lenia_edges(cw):
-    run_cocotb("tb_lenia", "test_lenia", {"N": 5, "CELL_W": cw}, testcase="cocotb_lenia_edges",
+    run_cocotb("tb_lenia", "test_rule_lenia", {"N": 5, "CELL_W": cw}, testcase="cocotb_lenia_edges",
                plusargs=[f"+seed={cw}"])

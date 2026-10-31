@@ -7,7 +7,7 @@ A portable SystemVerilog framework for simulating cellular automata with large n
 | Part | State |
 |---|---|
 | Core RTL (`rtl/`) | complete; lint clean (Verilator `-Wall`); bit-exact against the golden model in unit, subsystem and integration tests, and at full 1920x1080 size for the six legacy experiments (see `docs/verification.md`) |
-| Rules | Hodgepodge machine, Greenberg-Hastings, interval rule (Artificial Physics); masks: square, von Neumann, legacy circle, legacy Artificial Physics |
+| Rules | Hodgepodge machine, Greenberg-Hastings, interval rule (Artificial Physics), Lenia (one programmable weight per distance class, host-driven growth table); masks: square, von Neumann, legacy circle, legacy Artificial Physics |
 | Display variant (`boards/nexys4ddr/`) | system simulated; board top lints against IP stubs; Vivado flow unverified |
 | PCIe variant (`boards/xdma_template/`) | generic template; the Verilog module reference lints and elaborates under slang; block-design script unverified |
 | Host software (`host/ca_host/`) | XDMA, UART and simulated transports, controller, viewer and CLI; tested against the simulated device and fake device nodes |
@@ -34,8 +34,8 @@ PYTHONPATH=host:model python3 -m ca_host.cli --transport sim --config configs/gh
 | `model/ca_model/` | golden model: seeds and palettes, masks, boundary-aware window sums, rules, experiment runner |
 | `sim/` | SystemVerilog testbenches (`sim/tb/`) and verification models (`sim/models/`: AXI memory, stream sink, AXI4-Lite driver) |
 | `tests/` | `model`, `unit` (cocotb), `sim`, `core`, `host`, `legacy` and static checks |
-| `tools/` | configuration header generator, file-list generator, Verilator runner, full-size RTL experiment runner |
-| `configs/`, `data/seeds/` | experiment configurations and their seed images |
+| `tools/` | configuration header generator, file-list generator, Verilator runner, full-size RTL experiment runner, Lenia seed composer |
+| `configs/`, `data/seeds/`, `data/patterns/` | experiment configurations, their seed images, and Lenia creatures (MIT, Lenia tutorial) |
 | `boards/` | `nexys4ddr` (display, UART, buttons) and `xdma_template` (PCIe) |
 | `host/ca_host/` | host library and command-line viewer |
 | `docs/` | `docs/architecture.md`, `docs/register_map.md`, `docs/adding_a_rule.md`, `docs/verification.md`, `docs/legacy_vhdl_findings.md`, the design spec and the implementation plan |
@@ -56,14 +56,15 @@ These steps take a cellular automaton from its description and an initial grid t
 |---|---|---|
 | `name` | label of the output folders | any string |
 | `grid` | `[GRID_X, GRID_Y]` in cells | `[1920, 1080]` on the display board; `GRID_X * cell_w` must be a multiple of the memory data width (128 bits on the Nexys 4 DDR, 512 bits in the XDMA template) |
-| `cell_w` | bits per cell | 4 or 8 for the legacy display palettes; 1, 2, 4, 8, 16 or 32 in the core |
+| `cell_w` | bits per cell | 4 or 8 for the legacy display palettes; 8 or 16 for Lenia (default 16); 1, 2, 4, 8, 16 or 32 in the core |
 | `nbh` | neighbourhood size N (an N x N window) | odd, at least 3 |
 | `boundary` | treatment of the grid edges | `toroidal`, `zero`, or the legacy `cylindrical` and `rectangular` modes |
-| `rule` | rule plug-in | `hodgepodge`, `ghm` (Greenberg-Hastings), `interval` (Artificial Physics) |
-| `mask` | neighbours that take part in the rule | `moore`, `von_neumann`, `circle29`, `ap21` |
-| `params` | rule parameters | `hodgepodge`: `G`, `K`; `ghm`: `T`, `STATES`, `E`; `interval`: `LO1`, `HI1`, `LO2`, `HI2`, `ALIVE` (see `docs/register_map.md`) |
+| `rule` | rule plug-in | `hodgepodge`, `ghm` (Greenberg-Hastings), `interval` (Artificial Physics), `lenia` |
+| `mask` | neighbours that take part in the rule | `moore`, `von_neumann`, `circle29`, `ap21`; not used by Lenia |
+| `params` | rule parameters | `hodgepodge`: `G`, `K`; `ghm`: `T`, `STATES`, `E`; `interval`: `LO1`, `HI1`, `LO2`, `HI2`, `ALIVE` (see `docs/register_map.md`); `lenia`: kernel radius `R` (at most (nbh - 1) / 2), ring peaks `beta`, growth centre `mu`, width `sigma` and time scale `T` |
+| `weight_w`, `lut_idx_w` | Lenia only: bits per class weight and growth-table index | defaults 6 and 12 |
 | `seed`, `seed_mode`, `seed_value` | initial grid image and the conversion of its pixels into cell states | see step 2 |
-| `palette` | colours of the PNG files written on the host | `gray`, `legacy4_windows`, `legacy4_gradient`, `legacy8` |
+| `palette` | colours of the PNG files written on the host and of the display board | `gray`, `legacy4_windows`, `legacy4_gradient`, `legacy8`, `viridis` (8 bits and more); cells wider than 8 bits use their top 8 bits |
 
 **2. Prepare the initial grid.** The initial state is an image of exactly GRID_X x GRID_Y pixels, drawn in any image editor and stored as BMP or PNG. The host software converts it directly, so the MATLAB script and text file of the original flow are no longer needed. `seed_mode` selects the conversion:
 
@@ -73,6 +74,7 @@ These steps take a cellular automaton from its description and an initial grid t
 | `binary` | indexed image | `seed_value` for every non-zero pixel (for example 251 for Hodgepodge, 1 for Artificial Physics), 0 otherwise |
 | `raw` | greyscale or indexed image | the pixel value itself (8-bit cells) |
 | `gray8` | indexed image | the grey-level mapping of the legacy `bmp2ascii.m` script |
+| `unit16` | 16-bit greyscale PNG | Lenia state value / 65535, converted to `round(state * 2^cell_w)` |
 
 **3. Preview the evolution with the golden model.** The model is bit-exact with the hardware, so its snapshots show what the FPGA will produce:
 
@@ -95,11 +97,20 @@ from ca_host.controller import CAController
 
 cfg = config.load("configs/hodgepodge29.json")
 ctl = CAController(dev, cfg)        # dev: UartDevice or XdmaDevice, see below
-ctl.load_grid(load_seed(cfg["seed"], cfg["seed_mode"], cfg.get("seed_value")))  # stops, resets, uploads
-ctl.set_params(cfg["params"])       # may also change while running; applies from the next pass
+ctl.load_grid(load_seed(cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"), cfg["cell_w"]))  # stops, resets, uploads
+ctl.set_params(cfg["params"])       # may also change while running; applies from the next pass (Lenia: see below)
 ctl.set_frame_repeat(0)             # one generation per pass; n: one generation every n+1 passes
 ctl.start()
 ```
+
+### Lenia
+
+`configs/lenia_orbium.json` (six Orbiums, 27 x 27 window) and `configs/lenia_hydrogeminium.json` (three Hydrogeminiums, 37 x 37 window) run Lenia on the 1920x1080 grid with 16-bit cells; the design is described in `docs/superpowers/specs/2026-10-31-lenia-rule-design.md` and the figure `docs/figures/lenia_engine.png`.
+
+* **Seeds.** `python3 tools/compose_seed.py --pattern orbium@150,200 --pattern orbium@600,1150 --soup 400,1400,200,300,0.3 --out data/seeds/my_seed.png` places creatures from `data/patterns/` (`orbium`, `hydrogeminium`, `smooth_wanderer`) and random soups on a 1920x1080 canvas and writes a 16-bit PNG for `seed_mode` `unit16`.
+* **Kernel and growth function.** The bitstream fixes the largest window, the cell width and the precision; the kernel (radius and ring peaks, once per simulation) and the growth function (mu, sigma, T, at any time) are set from the host. A core starts with the configuration's kernel and growth table, so a seed upload alone runs the default creature. In scripts, `ctl.load_kernel(R, beta)` replaces the kernel (it stops the core; call `ctl.start()` afterwards) and `gen = ctl.set_growth(mu, sigma, T)` switches the growth table between two passes; generations up to `gen` used the previous table, which makes runs with live changes reproducible in the model.
+* **Command-line tool.** For Lenia configurations the CLI loads the kernel and the table at start; `[` and `]` lower and raise mu by 0.001, `{` and `}` lower and raise sigma by 0.0005 (window keys on the PCIe card, stdin commands on the display board), and each change prints the first generation computed with it.
+* **Timing.** The Lenia datapath is designed for the 200 MHz engine clock; `boards/ooc_lenia/ooc_lenia.tcl` runs an out-of-context Vivado synthesis and implementation of it, which has not been run yet.
 
 ### Board with a display (Digilent Nexys 4 DDR)
 

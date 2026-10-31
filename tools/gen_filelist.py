@@ -36,8 +36,10 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--top", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--extra-dir", action="append", default=[],
+                    help="additional directory (relative to the repository) holding the top or its modules")
     args = ap.parse_args(argv)
-    files = sources_for(args.top)
+    files = sources_for(args.top, extra_dirs=tuple(args.extra_dir))
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text("".join(f"{p.relative_to(ROOT)}\n" for p in files))
     print(f"{len(files)} files -> {args.out}")

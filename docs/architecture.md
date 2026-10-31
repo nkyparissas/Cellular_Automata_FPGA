@@ -1,6 +1,6 @@
 # Architecture
 
-This document summarises how the design is organised; the full rationale is in `docs/superpowers/specs/2026-10-24-ca-sv-framework-design.md`.
+This document summarises how the design is organised; the full rationale is in `docs/superpowers/specs/2026-10-24-ca-sv-framework-design.md`, and the Lenia rule is specified in `docs/superpowers/specs/2026-10-31-lenia-rule-design.md`.
 
 ## Principle
 
@@ -24,6 +24,12 @@ The framework keeps the parallelisation of the original design: a grid-lines buf
 * `rtl/mem/ca_frame_writer.sv` writes the output rows to the back buffer when the pass commits, or discards them otherwise.
 * `rtl/top/ca_core.sv` joins the reader and writer onto one AXI4 master with pulp-platform `axi_rw_join`, and holds the register file, the controller and the parameter clock crossing. `rtl/top/ca_core_flat.sv` offers the same core with Xilinx-style flat ports.
 
+## Lenia
+
+![The Lenia CA Engine](figures/lenia_engine.png)
+
+The Lenia rule (`rtl/rules/ca_rule_lenia.sv`) keeps one cell per cycle by grouping the window cells into distance classes (cells with equal i^2 + j^2: 69 classes in a 27 x 27 window, 121 in 37 x 37). Every class is pre-added and multiplied once by its own weight register, the products are summed, the sum is shifted to index the active bank of a two-bank growth table, and the entry is added to the centre cell with saturation; every stage is registered for the 200 MHz engine clock. The weights form a shift chain loaded through `KERNEL_DATA` once per simulation, so each weight register sits next to its multiplier. `rtl/ctrl/ca_lenia_ctrl.sv` holds the kernel FIFO, the banks' shifts and the commit: the host writes the inactive bank, and the banks swap in a cycle in which no pass runs, so every pass uses one table and `GROWTH_GEN` records the switch (see `docs/register_map.md`).
+
 ## Boundary modes
 
 | Mode | Rows read per pass | Rows written | Edges |
@@ -42,7 +48,7 @@ The controller starts a pass when RUN is set and a frame request is pending, fro
 
 ## Clocks and resets
 
-`aclk` runs the AXI side (registers, controller, reader, writer, line-buffer write port, consumer stream); `eclk` runs the engine. Resets are active low and synchronous; each domain synchronises the external reset with `rtl/common/ca_reset_sync.sv`, and only control and valid state is reset (data-path registers and delay lines are not). Rule parameters cross with a toggle handshake at pass start (`rtl/top/ca_params_cdc.sv`).
+`aclk` runs the AXI side (registers, controller, reader, writer, line-buffer write port, consumer stream); `eclk` runs the engine. Resets are active low and synchronous; each domain synchronises the external reset with `rtl/common/ca_reset_sync.sv` (asserted from power-up), and only control and valid state is reset (data-path registers and delay lines are not). Rule parameters cross with a toggle handshake at pass start (`rtl/top/ca_params_cdc.sv`).
 
 ## Verification
 

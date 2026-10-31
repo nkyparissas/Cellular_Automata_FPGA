@@ -44,7 +44,7 @@ Build the per-cell terms with a `generate` loop over `MASK` (masked-off cells be
 
 ## 3. Register the rule
 
-* `rtl/pkg/ca_pkg.sv`: add `RULE_MAJORITY = 4'd3` to `rule_e` and parameter index constants if useful.
+* `rtl/pkg/ca_pkg.sv`: add `RULE_MAJORITY = 4'd4` to `rule_e` (0 to 3 are taken) and parameter index constants if useful.
 * `rtl/engine/ca_engine.sv`: add a `case` arm instantiating the new module.
 * `tools/gen_cfg.py` (`RULE_ID`), `host/ca_host/simdev.py` (`RULE_ID`) and `host/ca_host/controller.py` (`RULES`): add the name with the same number.
 * `rtl/ctrl/ca_regs.sv` needs no change: `CORE_CFG` reports the rule number.
@@ -67,6 +67,13 @@ Create a configuration file next to the existing ones in `configs/`, for example
 
 `python3 -m ca_model.run --config <file> --gens 100` shows the model's behaviour; `python3 tools/run_rtl_experiment.py --config <file> --gens 3 --dump-every 1` runs the RTL at full size and compares it with the model.
 
-## Notes towards Lenia
+## Rules with configuration beyond RULE_PARAM: Lenia
 
-A fixed-point Lenia rule fits the same interface: the kernel becomes a weighted sum (constant multipliers, or radius-grouped pre-adds to share DSPs), the growth function a lookup table indexed by the quantised potential, and the update `clip(c + dt * G(u))` a final pipeline stage. Wider cells (for example 16-bit fixed point) need no framework change: `CELL_W` is a parameter throughout the RTL, and the golden model, frame packing (`model/ca_model/grids.py`), configuration tools and host handle 1-, 2-, 4-, 8-, 16- and 32-bit cells (`tests/core/test_core.py::test_core_16bit_cells` runs 16-bit cells end to end). Seeds are 8-bit images and the legacy display palettes exist for 4- and 8-bit cells only; the `gray` palette works for any width. Kernels that should change at run time can take their weights from additional RULE_PARAM registers or from a small RAM loaded through AXI4-Lite.
+The Lenia rule (`rtl/rules/ca_rule_lenia.sv`, design spec `docs/superpowers/specs/2026-10-31-lenia-rule-design.md`) shows how a rule that needs more configuration than eight 32-bit parameters fits the framework without changing the other rules:
+
+* **Model.** `model/ca_model/lenia.py` is the single implementation of the distance-class map, the quantised class weights and the growth table; `step()` dispatches to it, and the host and `tools/gen_cfg.py` use the same functions.
+* **Engine ports.** `ca_engine` carries the Lenia inputs (the weight-chain stream, the growth-table write port in the register clock domain and the table selection) to every rule; the other rules fold them into an unused signal, as Lenia does with `params_i`.
+* **Configuration path.** `rtl/ctrl/ca_lenia_ctrl.sv` owns the kernel FIFO, the table banks' shifts, the commit and `GROWTH_GEN`; `ca_regs` decodes the extra registers only when `RULE` is Lenia, and pass-constant selections cross to the engine with the rule parameters (`ca_params_cdc`, `EXT_W`).
+* **Build-time parameters.** `WEIGHT_W`, `LUT_IDX_W`, the power-up kernel and the growth-table initialisation file reach `ca_core`, `ca_core_flat`, the display system and both board tops from the configuration through `tools/gen_cfg.py`.
+
+Cells of 8 and 16 bits run end to end: the golden model, frame packing (`model/ca_model/grids.py`), configuration tools and host handle 1-, 2-, 4-, 8-, 16- and 32-bit cells, 16-bit seeds use `seed_mode` `"unit16"` (`tools/compose_seed.py` composes them), and the display palettes index the top 8 bits of wider cells (`gray` and `viridis`).

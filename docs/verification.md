@@ -42,3 +42,28 @@ Long RTL runs (snapshots every 250 generations compared with the model's snapsho
 ## Legacy VHDL (Tasks 22 and 23)
 
 The legacy toroidal buffer with the Hodgepodge n29, GHM and Artificial Physics engines reproduces the golden model exactly on random 64x64 toroidal grids (GHDL; two simulation artefacts of the legacy code patched in a build copy, see `docs/legacy_vhdl_findings.md` #13 and #14). Findings 1, 2 and 3 were reproduced with directed testbenches.
+
+## Lenia (2026-10-31)
+
+Design spec `docs/superpowers/specs/2026-10-31-lenia-rule-design.md`, implementation plan `docs/superpowers/plans/2026-10-31-lenia-rule.md`.
+
+* **Golden model** (`tests/model/test_lenia.py`): the FFT sum equals the per-cell reference in all four boundary modes for N = 5, 7, 9, 8- and 16-bit cells and 4- and 8-bit weights; a generation equals the per-window reference for SH = 0, 3 and 40, including saturation; the distance-class counts (69, 78 and 121 classes for N = 27, 29, 37) and the creatures' quantised kernels (Orbium 64 non-zero classes over 496 cells, Hydrogeminium 106 over 904) are pinned. A 1920x1080 generation takes about 0.2 s.
+* **Precision** (`tests/model/test_lenia_precision.py`, 500 steps against the floating-point update of the Lenia tutorial, 16-bit cells, 6-bit weights, 12-bit table index): Orbium (128 x 128) mean mass error 0.23 %, speed ratio 1.0014, size ratio 1.0004; Hydrogeminium (192 x 192) mean mass error 0.53 %, speed ratio 0.990, size ratio 0.998. The thresholds are 3 % for mass, 2 % (Orbium) and 3 % (Hydrogeminium) for speed and size.
+* **RTL unit tests** (`tests/unit/test_rule_lenia.py`, `tests/unit/test_lenia_ctrl.py`): the datapath equals the model on random windows for N = 5, 7, 9 and 27, with random kernels and tables in both banks, power-up defaults, SH and saturation edges and the chain order; the configuration controller accepts kernel words only when idle, holds passes until the last word is shifted, writes only the inactive bank, ignores indices beyond the table and writes while a commit is pending, swaps when no pass runs (also with fast-forward passes queued) and keeps its configuration over a reset.
+* **Core** (`tests/core/test_core_lenia.py`): every generation bit-exact with uploaded random kernels and tables (toroidal and zero edges), with the power-up kernel and table (Orbium on 128 x 128), with 8-bit cells, with memory stalls, with a growth commit while passes run (host-paced, consumer-paced and with fast-forward passes; the table schedule follows GROWTH_GEN), with the commit moved cycle by cycle across a pass start, with a kernel write during a pass (ignored) and with no pass starting while a kernel load is pending; an unsupported weight width fails at elaboration.
+* **Registers** (`tests/sim/test_ctrl.py`): 16-bit decoding (0x0104 is unmapped, 0x10004 aliases CTRL) and, in a core built for another rule, the Lenia registers read 0, ignore writes and raise no strobe.
+* **Static**: `make lint` (including the Lenia tops), `make lint-boards` for `hodgepodge29` and `lenia_orbium`, and slang elaboration of both board tops with both configurations are clean.
+* **200 MHz**: unverified here; `boards/ooc_lenia/ooc_lenia.tcl` is the out-of-context Vivado run to do first.
+
+Full-size regression after the Lenia work (`tools/run_rtl_experiment.py --gens 2 --dump-every 1 --threads 4`, 1920x1080):
+
+| Configuration | s/gen (Verilator, 4 threads) | Generations 1-2 |
+|---|---|---|
+| hodgepodge29 | 9.6 | MATCH |
+| hodgepodge19 | 7.7 | MATCH |
+| ghm_circle_toroidal | 8.8 | MATCH |
+| ghm_vn_toroidal | 10.5 | MATCH |
+| ghm_moore_cylindrical | 9.1 | MATCH |
+| ap_toroidal | 8.2 | MATCH |
+| lenia_orbium | 9.3 | MATCH |
+| lenia_hydrogeminium | 11.0 | MATCH |

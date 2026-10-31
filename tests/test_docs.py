@@ -26,7 +26,8 @@ def test_docs_reference_existing_files():
 
 def test_register_map_doc_matches_pkg():
     pkg = (ROOT / "rtl" / "ctrl" / "ca_regs_pkg.sv").read_text()
-    sv = {name: int(val, 16) for name, val in re.findall(r"REG_(\w+)\s*=\s*8'h([0-9A-Fa-f]+)", pkg)}
+    sv = {name: int(val, 16) for name, val in re.findall(r"REG_(\w+)\s*=\s*\d+'h([0-9A-Fa-f]+)", pkg)}
+    assert len(sv) >= 21, f"only {len(sv)} registers parsed from ca_regs_pkg.sv"
     doc = (ROOT / "docs" / "register_map.md").read_text()
     rows = {name: int(off, 16) for off, name in re.findall(r"^\|\s*0x([0-9A-Fa-f]+)\s*\|\s*([A-Z_0-9]+)\s*\|", doc, re.M)}
     assert rows, "no register rows found"
