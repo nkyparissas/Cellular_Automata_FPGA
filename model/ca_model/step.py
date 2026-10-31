@@ -1,7 +1,7 @@
 """One generation of the CA for a configuration dictionary (spec Section 17)."""
 import numpy as np
 
-from . import masks
+from . import lenia, masks
 from .grids import cell_dtype
 from .neigh import Boundary
 from .rules import apply_grid, params_vector
@@ -9,6 +9,8 @@ from .rules import apply_grid, params_vector
 
 def step(grid: np.ndarray, cfg: dict) -> np.ndarray:
     """Return the next generation; frozen rows of legacy modes are copied."""
+    if cfg["rule"] == "lenia":
+        return lenia.step_lenia(grid, *lenia.cfg_kernel(cfg), cfg["nbh"], cfg["cell_w"], Boundary(cfg["boundary"]))
     n = cfg["nbh"]
     r = (n - 1) // 2
     bnd = Boundary(cfg["boundary"])

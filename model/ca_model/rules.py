@@ -17,8 +17,10 @@ PARAM_INDEX = {
 
 
 def params_vector(rule: str, params: dict) -> list[int]:
-    """Map named parameters to the 8 RULE_PARAM registers."""
+    """Map named parameters to the 8 RULE_PARAM registers (Lenia uses none)."""
     vec = [0] * NUM_RULE_PARAMS
+    if rule == "lenia":
+        return vec
     index = PARAM_INDEX[rule]
     for name, value in params.items():
         vec[index[name]] = int(value)
