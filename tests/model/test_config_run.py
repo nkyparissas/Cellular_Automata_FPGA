@@ -53,3 +53,12 @@ def test_cli_small_run(tmp_path):
     assert (out / "gen_00003.png").is_file() and (out / "gen_00000.png").is_file()
     g3 = np.load(out / "gen_00003.npy")
     assert g3.shape == (24, 32) and g3.dtype == np.uint8
+
+
+def test_lenia_configs():
+    from ca_model.grids import load_seed
+    for name, nbh in (("lenia_orbium", 27), ("lenia_hydrogeminium", 37)):
+        cfg = config.load(ROOT / "configs" / f"{name}.json")
+        assert (cfg["grid"], cfg["cell_w"], cfg["nbh"], cfg["palette"]) == ([1920, 1080], 16, nbh, "viridis")
+        g = load_seed(cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"), cfg["cell_w"])
+        assert g.dtype == np.uint16 and g.shape == (1080, 1920) and g.max() > 0

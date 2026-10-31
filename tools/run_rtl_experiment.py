@@ -46,7 +46,7 @@ def main(argv=None) -> int:
     cfg_dir = out / "cfg"
     cfg_dir.mkdir(exist_ok=True)
     gen_cfg_svh(cfg, args.data_w, cfg_dir / "ca_cfg.svh")
-    seed = load_seed(cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"))
+    seed = load_seed(cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"), cfg["cell_w"])
     (out / "seed.hex").write_text("\n".join(frame_to_hex(seed, cfg["cell_w"], args.data_w)) + "\n")
 
     dumps = sorted({args.gens} | (set(range(args.dump_every, args.gens + 1, args.dump_every))

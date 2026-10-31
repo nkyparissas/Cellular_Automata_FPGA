@@ -118,7 +118,7 @@ def main(argv=None) -> int:
     ctl = CAController(dev, cfg)
     if args.transport == "uart":
         dev._unit = ctl.info()["data_bytes"]
-    seed = load_seed(args.seed or cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"))
+    seed = load_seed(args.seed or cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"), cfg["cell_w"])
     ctl.load_grid(seed)
     ctl.set_params(cfg["params"])
     ctl.set_frame_repeat(args.frame_repeat)

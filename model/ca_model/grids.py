@@ -23,8 +23,8 @@ _WINDOWS16 = [
 ]
 
 
-def load_seed(path, mode: str, value: int | None = None) -> np.ndarray:
-    """Load an indexed BMP seed as a uint8 grid.
+def load_seed(path, mode: str, value: int | None = None, cell_w: int = 8) -> np.ndarray:
+    """Load a seed image as a grid of cells.
 
     ``mode="index"`` returns the raw palette indices (legacy 4-bit scripts).
     ``mode="binary"`` maps every non-zero index to ``value`` (the legacy text
@@ -34,8 +34,19 @@ def load_seed(path, mode: str, value: int | None = None) -> np.ndarray:
     ``mode="gray8"`` reproduces the legacy 8-bit ``bmp2ascii.m``: the grey
     levels of the palette are sorted ascending and pixel index ``i`` maps to
     ``round(sorted_grey[i] * 255)``.
+    ``mode="unit16"`` reads a 16-bit greyscale PNG whose value / 65535 is the
+    state in [0, 1] (Lenia) and returns ``round(state * 2^cell_w)``, clamped to
+    ``2^cell_w - 1``, as ``cell_dtype(cell_w)``. The other modes return uint8.
     """
     img = Image.open(Path(path))
+    if mode == "unit16":
+        if img.mode not in ("I;16", "I;16B", "I;16L", "I"):
+            raise ValueError(f"{path}: unit16 seeds must be 16-bit greyscale PNGs, got mode {img.mode}")
+        v = np.array(img, dtype=np.int64)
+        if v.size and (v.min() < 0 or v.max() > 65535):
+            raise ValueError(f"{path}: unit16 values outside 0..65535")
+        q = np.rint(v / 65535 * (1 << cell_w))
+        return np.clip(q, 0, (1 << cell_w) - 1).astype(cell_dtype(cell_w))
     if mode == "raw":
         if img.mode not in ("L", "P"):
             raise ValueError(f"{path}: raw seeds must be greyscale or indexed, got mode {img.mode}")

@@ -25,7 +25,7 @@ def main(argv=None) -> int:
     cfg = config.load(args.config)
     out = Path(args.out) if args.out else config.ROOT / "build" / "exp" / cfg["name"]
     out.mkdir(parents=True, exist_ok=True)
-    grid = load_seed(cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"))
+    grid = load_seed(cfg["seed"], cfg["seed_mode"], cfg.get("seed_value"), cfg["cell_w"])
     x, y = cfg["grid"]
     if grid.shape != (y, x):
         raise SystemExit(f"seed is {grid.shape[1]}x{grid.shape[0]}, config expects {x}x{y}")

@@ -1,0 +1,25 @@
+{
+  "name": "lenia_orbium",
+  "grid": [
+    1920,
+    1080
+  ],
+  "cell_w": 16,
+  "nbh": 27,
+  "boundary": "toroidal",
+  "rule": "lenia",
+  "params": {
+    "R": 13,
+    "T": 10,
+    "mu": 0.15,
+    "sigma": 0.015,
+    "beta": [
+      1
+    ]
+  },
+  "weight_w": 6,
+  "lut_idx_w": 12,
+  "seed": "data/seeds/lenia_orbium.png",
+  "seed_mode": "unit16",
+  "palette": "viridis"
+}
