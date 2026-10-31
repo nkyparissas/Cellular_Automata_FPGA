@@ -12,8 +12,15 @@ package ca_pkg;
   typedef enum logic [3:0] {
     RULE_HODGEPODGE = 4'd0,
     RULE_GHM        = 4'd1,
-    RULE_INTERVAL   = 4'd2
+    RULE_INTERVAL   = 4'd2,
+    RULE_LENIA      = 4'd3
   } rule_e;
+
+  // Lenia growth-table selection, captured at pass start (active bank and its shift).
+  typedef struct packed {
+    logic       bank;
+    logic [5:0] sh;
+  } lenia_sel_t;
 
   localparam int unsigned NUM_RULE_PARAMS = 8;
   typedef logic [NUM_RULE_PARAMS-1:0][31:0] rule_params_t;
@@ -57,6 +64,38 @@ package ca_pkg;
   // Latency of ca_adder_tree with n inputs.
   function automatic int unsigned tree_lat(int unsigned n);
     return n <= 1 ? 0 : $clog2(n);
+  endfunction
+
+  // Lenia distance classes of an n x n window (n <= 101): the class of window
+  // cell (i, j) is the rank of d = (i-r)^2 + (j-r)^2 among the distinct values
+  // of d <= r^2, r = (n-1)/2, so class 0 is the centre; cells with d > r^2
+  // belong to no class (model/ca_model/lenia.py class_map).
+  localparam int LENIA_D_MAX = 2500;
+
+  // Number of classes C.
+  function automatic int unsigned lenia_classes(int unsigned n);
+    int                     r;
+    logic [LENIA_D_MAX:0]   seen;
+    r    = int'((n - 1) / 2);
+    seen = '0;
+    for (int a = 0; a <= r; a++)
+      for (int b = 0; b <= r; b++)
+        if (a * a + b * b <= r * r) seen[a*a + b*b] = 1'b1;
+    return $countones(seen);
+  endfunction
+
+  // Largest number of window cells in one class.
+  function automatic int unsigned lenia_max_cells(int unsigned n);
+    int                       r, m;
+    logic [LENIA_D_MAX:0][7:0] cnt;
+    r   = int'((n - 1) / 2);
+    for (int d = 0; d <= LENIA_D_MAX; d++) cnt[d] = 8'd0;
+    for (int a = -r; a <= r; a++)
+      for (int b = -r; b <= r; b++)
+        if (a * a + b * b <= r * r) cnt[a*a + b*b] = cnt[a*a + b*b] + 8'd1;
+    m = 0;
+    for (int d = 0; d <= r * r; d++) if (int'(cnt[d]) > m) m = int'(cnt[d]);
+    return m;
   endfunction
 
 endpackage

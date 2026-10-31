@@ -14,5 +14,6 @@ module tb_engine #(
   output logic                     vld_o
 );
   ca_engine #(.N(N), .CELL_W(CELL_W), .RULE(ca_pkg::rule_e'(RULE_ID)), .MASK(MASK)) i_engine (
-    .clk_i, .rst_ni, .col_i, .vld_i, .params_i, .cell_o, .vld_o);
+    .clk_i, .rst_ni, .col_i, .vld_i, .params_i, .kern_valid_i(1'b0), .kern_data_i('0),
+    .gt_clk_i(clk_i), .gt_we_i(1'b0), .gt_addr_i('0), .gt_data_i('0), .sel_i('0), .cell_o, .vld_o);
 endmodule

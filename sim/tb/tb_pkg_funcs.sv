@@ -4,7 +4,9 @@ module tb_pkg_funcs (
   output logic [63:0] outr_o,
   output logic [63:0] first_o,
   output logic [3:0]  hzero_o,
-  output logic [39:0] tlat_o
+  output logic [39:0] tlat_o,
+  output logic [31:0] lenia_c_o,
+  output logic [15:0] lenia_m_o
 );
   import ca_pkg::*;
   for (genvar b = 0; b < 4; b++) begin : g_b
@@ -15,4 +17,6 @@ module tb_pkg_funcs (
     assign hzero_o[b]          = hzero(B);
   end
   assign tlat_o = {8'(tree_lat(841)), 8'(tree_lat(441)), 8'(tree_lat(9)), 8'(tree_lat(2)), 8'(tree_lat(1))};
+  assign lenia_c_o = {8'(lenia_classes(37)), 8'(lenia_classes(29)), 8'(lenia_classes(27)), 8'(lenia_classes(9))};
+  assign lenia_m_o = {8'(lenia_max_cells(37)), 8'(lenia_max_cells(27))};
 endmodule

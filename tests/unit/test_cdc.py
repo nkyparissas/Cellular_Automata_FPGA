@@ -119,6 +119,9 @@ async def cocotb_pkg_functions(dut):
     assert got == [exp[b][2] for b in range(4)]
     assert [(int(dut.hzero_o.value) >> b) & 1 for b in range(4)] == [exp[b][3] for b in range(4)]
     assert [(int(dut.tlat_o.value) >> (8 * k)) & 0xFF for k in range(5)] == [0, 1, 4, 9, 10]  # n=1,2,9,441,841
+    # Lenia distance classes: counts for N = 9, 27, 29, 37 and the largest class size for N = 27, 37.
+    assert [(int(dut.lenia_c_o.value) >> (8 * k)) & 0xFF for k in range(4)] == [10, 69, 78, 121]
+    assert [(int(dut.lenia_m_o.value) >> (8 * k)) & 0xFF for k in range(2)] == [16, 16]
 
 
 # ---------------------------------------------------------------- pytest ---

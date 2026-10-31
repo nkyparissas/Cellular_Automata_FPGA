@@ -1,11 +1,13 @@
 // Simple dual-port RAM with a wide write port and a narrow, registered read
 // port (latency 1). Narrow index k reads bits [(k % R)*RD_W +: RD_W] of wide
 // word k / R, R = WR_W / RD_W. Coded after the Vivado UG901 asymmetric-RAM
-// template so that block RAM is inferred.
+// template so that block RAM is inferred. INIT_FILE, when set, holds the
+// power-up contents ($readmemh, one RD_W-bit word per line).
 module ca_ram_sdp_asym #(
   parameter int unsigned WR_W     = 128,
   parameter int unsigned RD_W     = 8,
   parameter int unsigned RD_DEPTH = 1024,
+  parameter string       INIT_FILE = "",
   localparam int unsigned RATIO   = WR_W / RD_W,
   localparam int unsigned RA      = $clog2(RD_DEPTH),
   localparam int unsigned WA      = (RD_DEPTH / RATIO) > 1 ? $clog2(RD_DEPTH / RATIO) : 1
@@ -21,6 +23,8 @@ module ca_ram_sdp_asym #(
   localparam int unsigned LR = $clog2(RATIO);
 
   logic [RD_W-1:0] ram [RD_DEPTH];
+
+  initial if (INIT_FILE != "") $readmemh(INIT_FILE, ram);
 
   if (RATIO == 1) begin : g_sym
     always_ff @(posedge wclk_i) begin

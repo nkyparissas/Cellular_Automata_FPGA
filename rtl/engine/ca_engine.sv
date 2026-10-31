@@ -1,16 +1,30 @@
 // Sliding window followed by the selected rule plug-in. To add a rule,
 // add a value to ca_pkg::rule_e and a case arm below (docs/adding_a_rule.md).
+// The Lenia inputs (weight chain, growth-table write port, table selection)
+// are used by RULE_LENIA only; the other rules ignore them, and Lenia ignores
+// params_i.
 module ca_engine #(
-  parameter int unsigned     N      = 29,
-  parameter int unsigned     CELL_W = 8,
-  parameter ca_pkg::rule_e   RULE   = ca_pkg::RULE_HODGEPODGE,
-  parameter logic [N*N-1:0]  MASK   = '1
+  parameter int unsigned     N           = 29,
+  parameter int unsigned     CELL_W      = 8,
+  parameter ca_pkg::rule_e   RULE        = ca_pkg::RULE_HODGEPODGE,
+  parameter logic [N*N-1:0]  MASK        = '1,
+  parameter int unsigned     WEIGHT_W    = 6,
+  parameter int unsigned     LUT_IDX_W   = 12,
+  parameter logic [ca_pkg::lenia_classes(N)*WEIGHT_W-1:0] KERNEL_DEFAULT = '0,
+  parameter string           GROWTH_INIT = ""
 ) (
   input  logic                     clk_i,
   input  logic                     rst_ni,
   input  logic [N-1:0][CELL_W-1:0] col_i,
   input  logic                     vld_i,
   input  ca_pkg::rule_params_t     params_i,
+  input  logic                     kern_valid_i,
+  input  logic [WEIGHT_W-1:0]      kern_data_i,
+  input  logic                     gt_clk_i,
+  input  logic                     gt_we_i,
+  input  logic [LUT_IDX_W:0]       gt_addr_i,
+  input  logic [CELL_W:0]          gt_data_i,
+  input  ca_pkg::lenia_sel_t       sel_i,
   output logic [CELL_W-1:0]        cell_o,
   output logic                     vld_o
 );
@@ -33,8 +47,22 @@ module ca_engine #(
       ca_rule_interval #(.N(N), .CELL_W(CELL_W), .MASK(MASK)) i_rule (
         .clk_i, .rst_ni, .win_i(win), .vld_i(win_vld), .params_i, .cell_o, .vld_o);
     end
+    ca_pkg::RULE_LENIA: begin : g_lenia
+      ca_rule_lenia #(.N(N), .CELL_W(CELL_W), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W),
+                      .KERNEL_DEFAULT(KERNEL_DEFAULT), .GROWTH_INIT(GROWTH_INIT)) i_rule (
+        .clk_i, .rst_ni, .win_i(win), .vld_i(win_vld), .kern_valid_i, .kern_data_i, .gt_clk_i, .gt_we_i,
+        .gt_addr_i, .gt_data_i, .sel_i, .cell_o, .vld_o);
+    end
     default: begin : g_bad
       $error("ca_engine: unsupported RULE");
     end
   endcase
+
+  if (RULE == ca_pkg::RULE_LENIA) begin : g_unused_params
+    logic unused_params;
+    assign unused_params = ^params_i;
+  end else begin : g_unused_lenia
+    logic unused_lenia;
+    assign unused_lenia = ^{kern_valid_i, kern_data_i, gt_clk_i, gt_we_i, gt_addr_i, gt_data_i, sel_i};
+  end
 endmodule

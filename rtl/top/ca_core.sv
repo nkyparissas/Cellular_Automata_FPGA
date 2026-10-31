@@ -134,7 +134,8 @@ module ca_core #(
 
   ca_engine #(.N(NBH), .CELL_W(CELL_W), .RULE(RULE), .MASK(MASK)) i_engine (
     .clk_i(eclk_i), .rst_ni(e_rst_n), .col_i(col), .vld_i(col_vld), .params_i(e_params),
-    .cell_o(new_cell), .vld_o(cell_vld));
+    .kern_valid_i(1'b0), .kern_data_i('0), .gt_clk_i(aclk_i), .gt_we_i(1'b0), .gt_addr_i('0), .gt_data_i('0),
+    .sel_i('0), .cell_o(new_cell), .vld_o(cell_vld));
 
   ca_cell_packer #(.CELL_W(CELL_W), .DATA_W(DATA_W)) i_packer (
     .clk_i(eclk_i), .rst_ni(e_rst_n), .cell_i(new_cell), .vld_i(cell_vld), .word_o(word), .word_vld_o(word_vld));
