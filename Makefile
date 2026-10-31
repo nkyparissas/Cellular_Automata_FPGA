@@ -21,11 +21,16 @@ test:
 clean:
 	rm -rf build sim_build
 
-# Board tops lint against stub IP modules (MIG, clocking wizard).
+# Board tops lint against stub IP modules (MIG, clocking wizard), once per configuration.
+BOARD_LINT_CONFIGS := hodgepodge29 lenia_orbium
+
 lint-boards:
-	$(PYTHON) tools/gen_cfg.py --config configs/hodgepodge29.json --data-w 128 --out build/lint_cfg/ca_cfg.svh
-	$(PYTHON) tools/gen_cfg.py --config configs/hodgepodge29.json --data-w 512 --out build/lint_cfg/ca_cfg.vh
-	$(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg \
-	  -y boards/nexys4ddr/stubs --top-module top_nexys4ddr boards/nexys4ddr/top_nexys4ddr.sv
-	$(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg \
-	  --top-module ca_core_xdma boards/xdma_template/ca_core_xdma.v
+	@set -e; for c in $(BOARD_LINT_CONFIGS); do \
+	  echo "lint-boards $$c"; \
+	  $(PYTHON) tools/gen_cfg.py --config configs/$$c.json --data-w 128 --out build/lint_cfg/$$c/ca_cfg.svh; \
+	  $(PYTHON) tools/gen_cfg.py --config configs/$$c.json --data-w 512 --out build/lint_cfg/$$c/ca_cfg.vh; \
+	  $(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg/$$c \
+	    -y boards/nexys4ddr/stubs --top-module top_nexys4ddr boards/nexys4ddr/top_nexys4ddr.sv; \
+	  $(VERILATOR) --lint-only -Wall --timing rtl/lint.vlt -f rtl/files.f +incdir+build/lint_cfg/$$c \
+	    --top-module ca_core_xdma boards/xdma_template/ca_core_xdma.v; \
+	done

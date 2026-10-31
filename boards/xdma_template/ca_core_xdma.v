@@ -82,7 +82,9 @@ module ca_core_xdma #(
   ca_core_flat #(.GRID_X(`CA_GRID_X), .GRID_Y(`CA_GRID_Y), .CELL_W(`CA_CELL_W), .NBH(`CA_NBH),
                  .BOUNDARY(`CA_BND_ID), .RULE(`CA_RULE_ID), .MASK(`CA_MASK), .DATA_W(`CA_DATA_W),
                  .ADDR_W(ADDR_W), .ID_W(1), .BUF0_DEFAULT(BUF0), .BUF1_DEFAULT(BUF1),
-                 .PARAM_DEFAULTS(`CA_PARAMS)) i_core (
+                 .PARAM_DEFAULTS(`CA_PARAMS), .WEIGHT_W(`CA_WEIGHT_W), .LUT_IDX_W(`CA_LUT_IDX_W),
+                 .KERNEL_DEFAULT(`CA_KERNEL_DEFAULT), .GROWTH_INIT(`CA_GROWTH_INIT),
+                 .GROWTH_SH_DEFAULT(`CA_GROWTH_SH)) i_core (
     .aclk(aclk), .aresetn(aresetn), .eclk(eclk), .eresetn(eresetn),
     .m_axi_awid(m_axi_awid), .m_axi_awaddr(m_axi_awaddr), .m_axi_awlen(m_axi_awlen),
     .m_axi_awsize(m_axi_awsize), .m_axi_awburst(m_axi_awburst), .m_axi_awlock(m_axi_awlock),

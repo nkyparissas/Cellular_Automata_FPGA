@@ -1,6 +1,7 @@
 // Digilent Nexys 4 DDR top level: clocks, DDR2 MIG (AXI4), VGA, UART, buttons.
 // Everything board-independent lives in rtl/top/ca_display_system.sv.
-// The CA configuration comes from ca_cfg.svh (tools/gen_cfg.py) on the include path.
+// The CA configuration, including the display palette, comes from ca_cfg.svh
+// (tools/gen_cfg.py) on the include path.
 module top_nexys4ddr (
   input  logic        CLK100MHZ,
   input  logic        CPU_RESETN,
@@ -93,7 +94,9 @@ module top_nexys4ddr (
                       .BOUNDARY(ca_pkg::boundary_e'(BND_ID)), .RULE(ca_pkg::rule_e'(RULE_ID)),
                       .MASK(MASK), .PARAMS(PARAMS), .DATA_W(DATA_W), .ADDR_W(32),
                       .BUF0(64'h0), .BUF1(64'h0100_0000), .ACLK_HZ(UI_HZ), .BAUD(2_000_000),
-                      .DEBOUNCE_MS(20), .SLOW_REPEAT(59), .PALETTE(CELL_W == 8 ? "legacy8" : "legacy4_windows")) i_sys (
+                      .DEBOUNCE_MS(20), .SLOW_REPEAT(59), .PALETTE(PALETTE), .WEIGHT_W(WEIGHT_W),
+                      .LUT_IDX_W(LUT_IDX_W), .KERNEL_DEFAULT(KERNEL_DEFAULT), .GROWTH_INIT(GROWTH_INIT),
+                      .GROWTH_SH_DEFAULT(GROWTH_SH)) i_sys (
     .aclk(ui_clk), .aresetn(run_rst_n), .eclk(clk_ref_200), .eresetn(eng_rst_n),
     .pclk(clk_pix_148), .presetn(pix_rst_n),
     .m_axi_awid(awid), .m_axi_awaddr(awaddr), .m_axi_awlen(awlen), .m_axi_awsize(awsize),

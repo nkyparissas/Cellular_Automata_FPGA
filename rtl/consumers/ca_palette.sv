@@ -84,6 +84,11 @@ module ca_palette #(
 
   always_ff @(posedge clk_i) rgb_o <= table_q[cell_i[CELL_W-1 -: IW]];
 
+  if (CELL_W > 8) begin : g_unused_low
+    logic unused_low;
+    assign unused_low = ^cell_i[CELL_W-9:0];   // only the top 8 bits select a colour
+  end
+
   if ((PALETTE == "legacy4_windows" || PALETTE == "legacy4_gradient") && CELL_W != 4) begin : g_bad4
     $error("ca_palette: 4-bit palette with CELL_W != 4");
   end

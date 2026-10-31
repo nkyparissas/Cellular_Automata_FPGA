@@ -20,7 +20,13 @@ module ca_core_flat #(
   parameter logic [63:0]          BUF0_DEFAULT         = 64'h0,
   parameter logic [63:0]          BUF1_DEFAULT         = 64'h0100_0000,
   parameter int unsigned          FRAME_REPEAT_DEFAULT = 0,
-  parameter ca_pkg::rule_params_t PARAM_DEFAULTS       = '0
+  parameter ca_pkg::rule_params_t PARAM_DEFAULTS       = '0,
+  // Lenia (RULE_LENIA only), see ca_core.
+  parameter int unsigned          WEIGHT_W             = 6,
+  parameter int unsigned          LUT_IDX_W            = 12,
+  parameter logic [ca_pkg::lenia_classes(NBH)*WEIGHT_W-1:0] KERNEL_DEFAULT = '0,
+  parameter string                GROWTH_INIT          = "",
+  parameter int unsigned          GROWTH_SH_DEFAULT    = 0
 ) (
   input  logic                aclk,
   input  logic                aresetn,
@@ -115,7 +121,8 @@ module ca_core_flat #(
             .BOUNDARY(ca_pkg::boundary_e'(BOUNDARY)), .RULE(ca_pkg::rule_e'(RULE)),
             .MASK(MASK), .DATA_W(DATA_W), .ADDR_W(ADDR_W), .MAX_BURST(MAX_BURST),
             .FIFO_ROWS(FIFO_ROWS), .BUF0_DEFAULT(BUF0_DEFAULT), .BUF1_DEFAULT(BUF1_DEFAULT),
-            .FRAME_REPEAT_DEFAULT(FRAME_REPEAT_DEFAULT), .PARAM_DEFAULTS(PARAM_DEFAULTS),
+            .FRAME_REPEAT_DEFAULT(FRAME_REPEAT_DEFAULT), .PARAM_DEFAULTS(PARAM_DEFAULTS), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W),
+            .KERNEL_DEFAULT(KERNEL_DEFAULT), .GROWTH_INIT(GROWTH_INIT), .GROWTH_SH_DEFAULT(GROWTH_SH_DEFAULT),
             .axi_req_t(axi_req_t), .axi_resp_t(axi_resp_t), .axil_req_t(axil_req_t),
             .axil_resp_t(axil_resp_t)) i_core (
     .aclk_i(aclk), .arst_ni(aresetn), .eclk_i(eclk), .erst_ni(eresetn),

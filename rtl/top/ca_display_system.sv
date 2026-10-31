@@ -29,6 +29,12 @@ module ca_display_system #(
   parameter int unsigned          V_SYNC       = 5,
   parameter int unsigned          V_BP         = 36,
   parameter string                PALETTE      = "legacy8",
+  // Lenia (RULE_LENIA only), see ca_core.
+  parameter int unsigned          WEIGHT_W     = 6,
+  parameter int unsigned          LUT_IDX_W    = 12,
+  parameter logic [ca_pkg::lenia_classes(NBH)*WEIGHT_W-1:0] KERNEL_DEFAULT = '0,
+  parameter string                GROWTH_INIT  = "",
+  parameter int unsigned          GROWTH_SH_DEFAULT = 0,
   localparam int unsigned         MID_W        = 2
 ) (
   input  logic                aclk,      // memory controller user clock
@@ -116,7 +122,8 @@ module ca_display_system #(
 
   ca_core #(.GRID_X(GRID_X), .GRID_Y(GRID_Y), .CELL_W(CELL_W), .NBH(NBH), .BOUNDARY(BOUNDARY), .RULE(RULE),
             .MASK(MASK), .DATA_W(DATA_W), .ADDR_W(ADDR_W), .BUF0_DEFAULT(BUF0), .BUF1_DEFAULT(BUF1),
-            .FRAME_REPEAT_DEFAULT(SLOW_REPEAT), .PARAM_DEFAULTS(PARAMS),
+            .FRAME_REPEAT_DEFAULT(SLOW_REPEAT), .PARAM_DEFAULTS(PARAMS), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W),
+            .KERNEL_DEFAULT(KERNEL_DEFAULT), .GROWTH_INIT(GROWTH_INIT), .GROWTH_SH_DEFAULT(GROWTH_SH_DEFAULT),
             .axi_req_t(slv_req_t), .axi_resp_t(slv_resp_t), .axil_req_t(axil_req_t),
             .axil_resp_t(axil_resp_t)) i_core (
     .aclk_i(aclk), .arst_ni(aresetn), .eclk_i(eclk), .erst_ni(eresetn),

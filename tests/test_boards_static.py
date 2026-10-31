@@ -20,33 +20,47 @@ def _xdma_sources():
     return ROOT / src, hdr
 
 
-def _gen_cfg(out: Path, data_w: int) -> None:
-    subprocess.run(["python3", str(ROOT / "tools" / "gen_cfg.py"), "--config", str(ROOT / "configs" / "hodgepodge29.json"),
+CONFIGS = ["hodgepodge29.json", "lenia_orbium.json"]
+
+
+def _gen_cfg(out: Path, data_w: int, config: str = "hodgepodge29.json") -> None:
+    subprocess.run(["python3", str(ROOT / "tools" / "gen_cfg.py"), "--config", str(ROOT / "configs" / config),
                     "--data-w", str(data_w), "--out", str(out)], check=True, capture_output=True)
 
 
-def test_xdma_module_reference_is_verilog(tmp_path):
+@pytest.mark.parametrize("config", CONFIGS)
+def test_xdma_module_reference_is_verilog(config, tmp_path):
     """Vivado module references need a Verilog or VHDL top (UG994: SystemVerilog is not supported)."""
     src, hdr = _xdma_sources()
     assert src.suffix == ".v", f"{src.name}: the block-design module reference must be a Verilog-2001 file"
-    _gen_cfg(tmp_path / hdr, 512)
+    _gen_cfg(tmp_path / hdr, 512, config)
     r = subprocess.run([YOSYS or "yosys", "-q", "-p", f"read_verilog -I{tmp_path} {src}"],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
 
 
 @pytest.mark.skipif(not HAS_SLANG, reason="yosys-slang not available")
+def test_xdma_wrapper_uses_every_macro(tmp_path):
+    """Every configuration macro of ca_cfg.vh reaches the core (a missing one silently takes a default)."""
+    src, hdr = _xdma_sources()
+    _gen_cfg(tmp_path / hdr, 512, "lenia_orbium.json")
+    macros = set(re.findall(r"`define\s+(CA_\w+)", (tmp_path / hdr).read_text())) - {"CA_CFG_VH"}
+    used = set(re.findall(r"`(CA_\w+)", src.read_text()))
+    assert macros <= used, f"unused macros: {sorted(macros - used)}"
+
+
+@pytest.mark.parametrize("config", CONFIGS)
 @pytest.mark.parametrize("board", ["xdma_template", "nexys4ddr"])
-def test_board_top_strict_lrm(board, tmp_path):
+def test_board_top_strict_lrm(board, config, tmp_path):
     """Elaborate each board top with slang, which (unlike Verilator) enforces declaration before use."""
     import gen_filelist
     if board == "xdma_template":
         top_file, hdr = _xdma_sources()
-        _gen_cfg(tmp_path / hdr, 512)
+        _gen_cfg(tmp_path / hdr, 512, config)
         files = gen_filelist.sources_for("ca_core_flat") + [top_file]
     else:
         top_file = ROOT / "boards" / "nexys4ddr" / "top_nexys4ddr.sv"
-        _gen_cfg(tmp_path / "ca_cfg.svh", 128)
+        _gen_cfg(tmp_path / "ca_cfg.svh", 128, config)
         files = (gen_filelist.sources_for("ca_display_system") + sorted((ROOT / "boards" / board / "stubs").glob("*.sv"))
                  + [top_file])
     incs = " ".join(f"-I {d}" for d in [tmp_path, *INCDIRS])
