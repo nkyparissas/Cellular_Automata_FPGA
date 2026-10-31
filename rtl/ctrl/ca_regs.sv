@@ -3,8 +3,8 @@
 module ca_regs
   import ca_regs_pkg::*;
 #(
-  parameter int unsigned        GRID_X               = 64,
-  parameter int unsigned        GRID_Y               = 24,
+  parameter int unsigned        GRID_X               = 1920,
+  parameter int unsigned        GRID_Y               = 1080,
   parameter int unsigned        CELL_W               = 8,
   parameter int unsigned        NBH                  = 5,
   parameter ca_pkg::boundary_e  BND                  = ca_pkg::BND_TOROIDAL,

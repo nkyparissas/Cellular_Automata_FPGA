@@ -6,8 +6,8 @@
 // and the consumer's backpressure stalls the R channel.
 // Only the AR and R fields of axi_req_o are driven.
 module ca_frame_reader #(
-  parameter int unsigned       GRID_X    = 64,
-  parameter int unsigned       GRID_Y    = 24,
+  parameter int unsigned       GRID_X    = 1920,
+  parameter int unsigned       GRID_Y    = 1080,
   parameter int unsigned       CELL_W    = 8,
   parameter int unsigned       NBH       = 5,
   parameter int unsigned       DATA_W    = 128,

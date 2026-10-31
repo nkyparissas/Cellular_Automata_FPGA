@@ -5,8 +5,8 @@
 // The frame reader (AR/R) and writer (AW/W/B) share one AXI4 master port
 // through pulp-platform axi_rw_join.
 module ca_core #(
-  parameter int unsigned          GRID_X               = 64,
-  parameter int unsigned          GRID_Y               = 24,
+  parameter int unsigned          GRID_X               = 1920,
+  parameter int unsigned          GRID_Y               = 1080,
   parameter int unsigned          CELL_W               = 8,
   parameter int unsigned          NBH                  = 5,
   parameter ca_pkg::boundary_e    BOUNDARY             = ca_pkg::BND_TOROIDAL,

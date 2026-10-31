@@ -5,8 +5,8 @@
 // take the ca_pkg::boundary_e / rule_e values as integers.
 `include "axi/typedef.svh"
 module ca_core_flat #(
-  parameter int unsigned          GRID_X               = 64,
-  parameter int unsigned          GRID_Y               = 24,
+  parameter int unsigned          GRID_X               = 1920,
+  parameter int unsigned          GRID_Y               = 1080,
   parameter int unsigned          CELL_W               = 8,
   parameter int unsigned          NBH                  = 5,
   parameter int unsigned          BOUNDARY             = 32'(ca_pkg::BND_TOROIDAL),
