@@ -119,8 +119,7 @@ class CAController:
         w = lenia.kernel_weights(R, beta, cfg["nbh"], cfg.get("weight_w", lenia.DEFAULT_WEIGHT_W))
         self._ctrl(run=False, auto=False)
         self._wait_idle(timeout)
-        for v in w:
-            self.dev.write_reg(regs.REG_KERNEL_DATA, int(v))
+        self.dev.write_regs([(regs.REG_KERNEL_DATA, int(v)) for v in w])
         self._wait_clear(regs.ST_KERNEL_PENDING, timeout, "kernel load did not finish")
         self.weights = w
         self.set_growth(*self.growth, timeout=timeout)
@@ -135,8 +134,7 @@ class CAController:
         self._wait_clear(regs.ST_GROWTH_PENDING, timeout, "previous growth commit still pending")
         self.dev.write_reg(regs.REG_GROWTH_SHIFT, sh)
         mask = (1 << (cfg["cell_w"] + 1)) - 1
-        for i, e in enumerate(table):
-            self.dev.write_reg(regs.REG_GROWTH_TABLE + 4 * i, int(e) & mask)
+        self.dev.write_regs([(regs.REG_GROWTH_TABLE + 4 * i, int(e) & mask) for i, e in enumerate(table)])
         self.dev.write_reg(regs.REG_GROWTH_COMMIT, 1)
         self._wait_clear(regs.ST_GROWTH_PENDING, timeout, "growth commit did not take effect")
         self.growth = (mu, sigma, T)

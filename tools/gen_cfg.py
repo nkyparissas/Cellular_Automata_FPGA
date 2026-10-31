@@ -20,6 +20,12 @@ BOUNDARY_ID = {"toroidal": 0, "cylindrical": 1, "rectangular": 2, "zero": 3}
 RULE_ID = {"hodgepodge": 0, "ghm": 1, "interval": 2, "lenia": 3}
 
 
+def sv_path(path) -> str:
+    """A path for a SystemVerilog string literal: forward slashes, because a
+    backslash starts an escape (Windows paths, e.g. a Vivado run on Windows)."""
+    return path.as_posix()
+
+
 def lenia_fields(cfg: dict, out_dir) -> dict:
     """Lenia parameters of the cores (defaults for the other rules). For a Lenia
     configuration the power-up kernel is packed with class 0 in the low bits and
@@ -36,7 +42,7 @@ def lenia_fields(cfg: dict, out_dir) -> dict:
     lines = [f"{int(e) & ((1 << ew) - 1):0{(ew + 3) // 4}x}" for e in table]
     init = (Path(out_dir) / "ca_growth_init.hex").resolve()
     init.write_text("\n".join(lines + lines) + "\n")
-    return {"ww": ww, "lb": lb, "sh": sh, "kernel": f"{c * ww}'h{packed:x}", "init": str(init), "kw": c * ww}
+    return {"ww": ww, "lb": lb, "sh": sh, "kernel": f"{c * ww}'h{packed:x}", "init": sv_path(init), "kw": c * ww}
 
 
 def gen_cfg_svh(cfg: dict, data_w: int, path) -> None:

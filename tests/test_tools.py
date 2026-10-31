@@ -19,3 +19,10 @@ def test_rtl_runs_limited_to_200_generations(monkeypatch, capsys):
     with pytest.raises(SystemExit) as e:
         run_rtl_experiment.main(["--config", str(ROOT / "configs/ap_toroidal.json"), "--gens", "201"])
     assert e.value.code != 0 and "200" in capsys.readouterr().err
+
+
+def test_gen_cfg_paths_are_posix():
+    """Paths inside SystemVerilog strings use forward slashes (backslashes are escapes, e.g. a Windows Vivado)."""
+    from pathlib import PureWindowsPath
+    import gen_cfg
+    assert gen_cfg.sv_path(PureWindowsPath(r"C:\work\nexys4ddr\ca_growth_init.hex")) == "C:/work/nexys4ddr/ca_growth_init.hex"

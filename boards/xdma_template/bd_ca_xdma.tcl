@@ -97,6 +97,8 @@ assign_bd_address
 set_property offset 0x00000000 [get_bd_addr_segs {xdma_0/M_AXI/SEG_ddr4_0_C0_DDR4_ADDRESS_BLOCK}]
 set_property offset 0x00000000 [get_bd_addr_segs {ca_core/m_axi/SEG_ddr4_0_C0_DDR4_ADDRESS_BLOCK}]
 set_property offset 0x00000000 [get_bd_addr_segs {xdma_0/M_AXI_LITE/SEG_ca_core_reg0}]
+# The register map spans 64 KB (Lenia GROWTH_TABLE window at 0x8000); a smaller range would drop table writes.
+set_property range 64K [get_bd_addr_segs {xdma_0/M_AXI_LITE/SEG_ca_core_reg0}]
 
 validate_bd_design
 save_bd_design

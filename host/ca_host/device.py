@@ -15,5 +15,10 @@ class Device(ABC):
     @abstractmethod
     def write_mem(self, addr: int, data: bytes) -> None: ...
 
+    def write_regs(self, writes) -> None:
+        """Write (offset, value) pairs in order; transports may pipeline them."""
+        for off, val in writes:
+            self.write_reg(off, val)
+
     def close(self) -> None:
         pass

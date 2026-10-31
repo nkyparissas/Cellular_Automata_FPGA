@@ -163,3 +163,22 @@ def test_cli_lenia_nudge(tmp_path, lcfg, monkeypatch, capsys):
                      "--out", str(tmp_path / "out")]) == 0
     out = capsys.readouterr().out
     assert re.search(r"mu=0\.151\b", out) and re.search(r"from generation \d+", out)
+
+
+def test_cli_uploads_the_table_once(tmp_path, lcfg, monkeypatch):
+    """Start-up writes the growth table once (load_kernel already writes it for the configuration)."""
+    cfg = _cfg_file(tmp_path, lcfg)
+
+    class Counting(SimDevice):
+        commits = 0
+
+        def write_reg(self, off, val):
+            if off == regs.REG_GROWTH_COMMIT:
+                Counting.commits += 1
+            super().write_reg(off, val)
+
+    dev = Counting(cfg)
+    monkeypatch.setattr(cli, "open_device", lambda args, c: dev)
+    assert cli.main(["--transport", "sim", "--config", str(tmp_path / "cfg.json"), "--frames", "1", "--headless",
+                     "--out", str(tmp_path / "out")]) == 0
+    assert Counting.commits == 1

@@ -55,6 +55,19 @@ class UartDevice(Device):
         self._s.write(encode_reg_write(off, val))
         self._expect(0x10)
 
+    def write_regs(self, writes, chunk: int = 512) -> None:
+        """Pipelined register writes: send a chunk of frames, then read their
+        acknowledgements, so a growth table costs a few round trips instead of
+        one per register. The bridge is back in its command state long before
+        the next frame's first byte arrives, so back-to-back frames are safe."""
+        writes = list(writes)
+        for k in range(0, len(writes), chunk):
+            part = writes[k:k + chunk]
+            self._s.write(b"".join(encode_reg_write(off, val) for off, val in part))
+            acks = self._read_exact(len(part))
+            if acks != b"\x10" * len(part):
+                raise IOError("UART: a register write was not acknowledged")
+
     def read_mem(self, addr: int, n: int) -> bytes:
         self._check(addr, n)
         self._s.write(encode_mem_read(addr, n))

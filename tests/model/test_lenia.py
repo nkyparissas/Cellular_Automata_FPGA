@@ -134,3 +134,13 @@ def test_1080p_step_is_fast():
     t0 = time.perf_counter()
     lenia.step_lenia(grid, w, table, sh, 27, 16, Boundary.TOROIDAL)
     assert time.perf_counter() - t0 < 20.0
+
+
+def test_degenerate_beta_rejected(tmp_path):
+    for beta in ([0], [1, -0.5], [float("nan")], []):
+        with pytest.raises(ValueError):
+            lenia.kernel_weights(13, beta, 27, 6)
+    good = {"R": 13, "T": 10, "mu": 0.15, "sigma": 0.015}
+    for beta in ([0], [1, -0.5], [float("inf")]):
+        with pytest.raises(ValueError):
+            config.load(_lenia_cfg(tmp_path, params=dict(good, beta=beta)))

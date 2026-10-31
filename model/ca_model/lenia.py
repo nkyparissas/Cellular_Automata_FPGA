@@ -64,6 +64,8 @@ def kernel_weights(R: float, beta, nbh: int, ww: int) -> np.ndarray:
     if not 1 <= R <= r:
         raise ValueError(f"kernel radius {R} outside 1 .. {r} for a {nbh}x{nbh} window")
     b = np.asarray(beta, dtype=np.float64)
+    if b.size == 0 or not np.all(np.isfinite(b)) or b.min() < 0 or b.max() <= 0:
+        raise ValueError(f"beta must be finite, non-negative and not all zero, got {list(beta)}")
     D = np.sqrt(_classes(nbh)[1]) / R * len(b)
     K = (D < len(b)) * b[np.minimum(D.astype(np.int64), len(b) - 1)] * bell(D % 1, 0.5, 0.15)
     return np.rint(K / K.max() * ((1 << ww) - 1)).astype(np.int64)
@@ -78,6 +80,8 @@ def growth_table(mu: float, sigma: float, T: float, w, nbh: int, cw: int, lb: in
         raise ValueError("the kernel has no non-zero weight")
     smax = wsum * ((1 << cw) - 1)
     sh = max(0, smax.bit_length() - lb)
+    if sh > 63:
+        raise ValueError(f"shift {sh} exceeds the 6-bit GROWTH_SHIFT field")
     idx = np.arange(1 << lb, dtype=np.float64)
     U = (idx * 2.0 ** sh + (2.0 ** sh - 1) / 2) / (wsum * 2.0 ** cw)
     e = np.rint((1.0 / T) * (2 * bell(U, mu, sigma) - 1) * 2.0 ** cw)
@@ -178,8 +182,11 @@ def validate(cfg: dict, where: str = "") -> None:
     r = (cfg["nbh"] - 1) // 2
     if not 1 <= p["R"] <= r:
         raise ValueError(f"{where}: R = {p['R']} outside 1 .. {r}")
-    if not p["beta"] or p["T"] <= 0 or p["sigma"] <= 0:
-        raise ValueError(f"{where}: beta must be non-empty and T, sigma positive")
+    b = np.asarray(p["beta"], dtype=np.float64)
+    if b.size == 0 or not np.all(np.isfinite(b)) or b.min() < 0 or b.max() <= 0:
+        raise ValueError(f"{where}: beta must be finite, non-negative and not all zero")
+    if p["T"] <= 0 or p["sigma"] <= 0:
+        raise ValueError(f"{where}: T and sigma must be positive")
     if cfg["cell_w"] not in (8, 16):
         raise ValueError(f"{where}: Lenia needs 8- or 16-bit cells, got {cfg['cell_w']}")
     if not 1 <= cfg["weight_w"] <= 15:

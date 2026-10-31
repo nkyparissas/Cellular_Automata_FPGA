@@ -62,7 +62,7 @@ def test_lenia_core_growth_commit_midrun(mode, tmp_path):
     seed, frames, log = run_core(cfg, 128, 4, tmp_path, kernel=w, table=(t1, sh), table2=(t2, sh - 1), gen2=2,
                                  plusargs=plus, want_log=True)
     g = growth_gen(log)
-    assert g >= 2
+    assert g == 2, f"the commit made during generation 2 took effect after generation {g}"
     check_against_model(cfg, seed, frames, lenia_schedule={1: (w, t1, sh), g + 1: (w, t2, sh - 1)})
 
 
@@ -76,7 +76,7 @@ def test_lenia_core_commit_with_fast_forward(tmp_path):
     seed, frames, log = run_core(cfg, 128, 6, tmp_path, kernel=w, table=(t1, sh), table2=(t2, sh), gen2=2,
                                  plusargs={"gpf": 3}, want_log=True)
     g = growth_gen(log)
-    assert g >= 2
+    assert g == 2, f"the commit made during generation 2 took effect after generation {g}"
     check_against_model(cfg, seed, frames, lenia_schedule={1: (w, t1, sh), g + 1: (w, t2, sh)})
 
 

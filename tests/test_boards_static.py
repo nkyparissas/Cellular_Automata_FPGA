@@ -145,6 +145,8 @@ def test_xdma_template_static():
         assert f"set {v} " in tcl, f"template variable {v} missing"
     for needle in ("ca_core_xdma", "xilinx.com:ip:xdma", "xilinx.com:ip:smartconnect", "assign_bd_address"):
         assert needle in tcl
+    # The register map spans 64 KB (GROWTH_TABLE window at 0x8000); a smaller default range drops table writes.
+    assert re.search(r"set_property range 64K \[get_bd_addr_segs \{xdma_0/M_AXI_LITE/SEG_ca_core_reg0\}\]", tcl)
     r = subprocess.run(["make", "lint-boards"], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "ca_core_xdma" in (ROOT / "Makefile").read_text()

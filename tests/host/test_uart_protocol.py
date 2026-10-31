@@ -59,3 +59,30 @@ def test_uart_device_loopback():
     payload = bytes(range(64))
     dev.write_mem(0x200, payload)
     assert dev.read_mem(0x200, 64) == payload
+
+
+class TurnaroundBridge(FakeBridge):
+    """Counts read-to-write turnarounds: each one is a USB round trip on a real adapter."""
+
+    def __init__(self):
+        super().__init__()
+        self.turnarounds, self._last = 0, "write"
+
+    def write(self, data):
+        if self._last == "read":
+            self.turnarounds += 1
+        self._last = "write"
+        return super().write(data)
+
+    def read(self, n):
+        self._last = "read"
+        return super().read(n)
+
+
+def test_uart_write_regs_pipelined():
+    """A growth table (4096 writes) must not cost one round trip per register."""
+    bridge = TurnaroundBridge()
+    dev = uart.UartDevice(serial_port=bridge, data_bytes=16)
+    dev.write_regs([(0x8000 + 4 * i, i * 7) for i in range(4096)])
+    assert all(bridge.regs[0x8000 + 4 * i] == i * 7 for i in range(4096))
+    assert bridge.turnarounds <= 16, f"{bridge.turnarounds} round trips"

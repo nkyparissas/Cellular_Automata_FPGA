@@ -147,8 +147,7 @@ def main(argv=None) -> int:
     ctl.load_grid(seed)
     if cfg["rule"] == "lenia":
         p = cfg["params"]
-        ctl.load_kernel(p["R"], p["beta"])
-        ctl.set_growth(p["mu"], p["sigma"], p["T"])
+        ctl.load_kernel(p["R"], p["beta"])   # also writes the growth table for the configuration's mu, sigma, T
     else:
         ctl.set_params(cfg["params"])
     ctl.set_frame_repeat(args.frame_repeat)
