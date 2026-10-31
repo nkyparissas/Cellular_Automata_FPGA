@@ -12,18 +12,39 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "model"))
 
-from ca_model import masks
+from ca_model import lenia, masks
 from ca_model.grids import cell_dtype
 from ca_model.rules import params_vector
 
 BOUNDARY_ID = {"toroidal": 0, "cylindrical": 1, "rectangular": 2, "zero": 3}
-RULE_ID = {"hodgepodge": 0, "ghm": 1, "interval": 2}
+RULE_ID = {"hodgepodge": 0, "ghm": 1, "interval": 2, "lenia": 3}
+
+
+def lenia_fields(cfg: dict, out_dir) -> dict:
+    """Lenia parameters of the cores (defaults for the other rules). For a Lenia
+    configuration the power-up kernel is packed with class 0 in the low bits and
+    the growth table is written to <out_dir>/ca_growth_init.hex: both banks, one
+    (cell_w + 1)-bit two's-complement entry per line."""
+    c = lenia.num_classes(cfg["nbh"])
+    ww = cfg.get("weight_w", lenia.DEFAULT_WEIGHT_W)
+    lb = cfg.get("lut_idx_w", lenia.DEFAULT_LUT_IDX_W)
+    if cfg["rule"] != "lenia":
+        return {"ww": ww, "lb": lb, "sh": 0, "kernel": f"{c * ww}'h0", "init": "", "kw": c * ww}
+    w, table, sh = lenia.cfg_kernel(cfg)
+    packed = sum(int(v) << (k * ww) for k, v in enumerate(w))
+    ew = cfg["cell_w"] + 1
+    lines = [f"{int(e) & ((1 << ew) - 1):0{(ew + 3) // 4}x}" for e in table]
+    init = (Path(out_dir) / "ca_growth_init.hex").resolve()
+    init.write_text("\n".join(lines + lines) + "\n")
+    return {"ww": ww, "lb": lb, "sh": sh, "kernel": f"{c * ww}'h{packed:x}", "init": str(init), "kw": c * ww}
 
 
 def gen_cfg_svh(cfg: dict, data_w: int, path) -> None:
     """Write localparams GRID_X, GRID_Y, CELL_W, NBH, BND_ID, RULE_ID, MASK,
-    PARAMS and DATA_W (included inside a module body)."""
+    PARAMS, DATA_W, the Lenia parameters WEIGHT_W, LUT_IDX_W, GROWTH_SH,
+    KERNEL_DEFAULT and GROWTH_INIT, and PALETTE (included inside a module body)."""
     n = cfg["nbh"]
+    lf = lenia_fields(cfg, Path(path).parent)
     mask = masks.by_name(cfg["mask"], n)
     pv = params_vector(cfg["rule"], cfg["params"])
     params = "{" + ", ".join(f"32'd{v}" for v in reversed(pv)) + "}"
@@ -38,6 +59,12 @@ def gen_cfg_svh(cfg: dict, data_w: int, path) -> None:
         f"localparam logic [{n * n - 1}:0] MASK = {masks.to_sv_literal(mask)};\n"
         f"localparam ca_pkg::rule_params_t PARAMS = {params};\n"
         f"localparam int unsigned DATA_W  = {data_w};\n"
+        f"localparam int unsigned WEIGHT_W  = {lf['ww']};\n"
+        f"localparam int unsigned LUT_IDX_W = {lf['lb']};\n"
+        f"localparam int unsigned GROWTH_SH = {lf['sh']};\n"
+        f"localparam logic [{lf['kw'] - 1}:0] KERNEL_DEFAULT = {lf['kernel']};\n"
+        f"localparam string GROWTH_INIT = \"{lf['init']}\";\n"
+        f"localparam string PALETTE = \"{cfg.get('palette', 'gray')}\";\n"
     )
     Path(path).write_text(text)
 
@@ -47,6 +74,7 @@ def gen_cfg_vh(cfg: dict, data_w: int, path) -> None:
     for Verilog wrappers that include it before their module header (the
     port widths depend on CA_DATA_W)."""
     n = cfg["nbh"]
+    lf = lenia_fields(cfg, Path(path).parent)
     mask = masks.by_name(cfg["mask"], n)
     pv = params_vector(cfg["rule"], cfg["params"])
     params = "{" + ", ".join(f"32'd{v}" for v in reversed(pv)) + "}"
@@ -63,6 +91,11 @@ def gen_cfg_vh(cfg: dict, data_w: int, path) -> None:
         f"`define CA_MASK    {masks.to_sv_literal(mask)}\n"
         f"`define CA_PARAMS  {params}\n"
         f"`define CA_DATA_W  {data_w}\n"
+        f"`define CA_WEIGHT_W  {lf['ww']}\n"
+        f"`define CA_LUT_IDX_W {lf['lb']}\n"
+        f"`define CA_GROWTH_SH {lf['sh']}\n"
+        f"`define CA_KERNEL_DEFAULT {lf['kernel']}\n"
+        f"`define CA_GROWTH_INIT \"{lf['init']}\"\n"
         "`endif\n"
     )
     Path(path).write_text(text)

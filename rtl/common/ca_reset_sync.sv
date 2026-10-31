@@ -8,6 +8,7 @@ module ca_reset_sync (
   output logic rst_no
 );
   (* ASYNC_REG = "TRUE" *) logic [1:0] sr;
+  initial sr = '0;   // reset asserted from power-up until arst_ni has been synchronised
   always_ff @(posedge clk_i) sr <= {sr[0], arst_ni};
   assign rst_no = sr[1];
 endmodule

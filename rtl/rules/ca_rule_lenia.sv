@@ -152,7 +152,7 @@ module ca_rule_lenia #(
   logic [C-1:0][WEIGHT_W-1:0] w;
   initial w = KERNEL_DEFAULT;
   always_ff @(posedge clk_i) begin
-    if (kern_valid_i) begin
+    if (rst_ni && kern_valid_i) begin   // no shift in reset (the chain itself is not reset)
       for (int unsigned c = 0; c + 1 < C; c++) w[c] <= w[c+1];
       w[C-1] <= kern_data_i;
     end

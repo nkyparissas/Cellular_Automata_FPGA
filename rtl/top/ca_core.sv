@@ -20,6 +20,13 @@ module ca_core #(
   parameter logic [63:0]          BUF1_DEFAULT         = 64'h0100_0000,
   parameter int unsigned          FRAME_REPEAT_DEFAULT = 0,
   parameter ca_pkg::rule_params_t PARAM_DEFAULTS       = '0,
+  // Lenia (RULE_LENIA only): weight and table-index widths, power-up kernel
+  // (class 0 in the low bits), growth-table initialisation file and its shift.
+  parameter int unsigned          WEIGHT_W             = 6,
+  parameter int unsigned          LUT_IDX_W            = 12,
+  parameter logic [ca_pkg::lenia_classes(NBH)*WEIGHT_W-1:0] KERNEL_DEFAULT = '0,
+  parameter string                GROWTH_INIT          = "",
+  parameter int unsigned          GROWTH_SH_DEFAULT    = 0,
   parameter type                  axi_req_t            = logic,
   parameter type                  axi_resp_t           = logic,
   parameter type                  axil_req_t           = logic,
@@ -61,6 +68,21 @@ module ca_core #(
     $error("ca_core: the grid must be at least NBH x NBH");
   end
 
+  localparam bit          LENIA = RULE == ca_pkg::RULE_LENIA;
+  localparam int unsigned LC    = ca_pkg::lenia_classes(NBH);
+  if (LENIA && CELL_W != 8 && CELL_W != 16) begin : g_bad_lenia_cw
+    $error("ca_core: Lenia needs CELL_W = 8 or 16");
+  end
+  if (LENIA && (WEIGHT_W < 1 || WEIGHT_W > 15)) begin : g_bad_lenia_ww
+    $error("ca_core: Lenia needs 1 <= WEIGHT_W <= 15 (LENIA_CFG field)");
+  end
+  if (LENIA && (LUT_IDX_W < 1 || LUT_IDX_W > 13)) begin : g_bad_lenia_lb
+    $error("ca_core: Lenia needs 1 <= LUT_IDX_W <= 13 (GROWTH_TABLE window)");
+  end
+  if (LENIA && LC > 255) begin : g_bad_lenia_c
+    $error("ca_core: Lenia supports at most 255 distance classes");
+  end
+
   // ------------------------------------------------------------- resets
   logic a_rst_n, e_rst_n;
   ca_reset_sync i_arst (.clk_i(aclk_i), .arst_ni, .rst_no(a_rst_n));
@@ -76,6 +98,14 @@ module ca_core #(
   logic                 active, kern_wr, gt_wr, sh_wr, commit_w;
   logic [12:0]          gt_idx;
   logic [31:0]          lenia_wdata;
+  // Lenia configuration path.
+  logic                 hold, kern_pending, growth_pending, kern_valid, gt_we;
+  logic [WEIGHT_W-1:0]  kern_data;
+  logic [LUT_IDX_W:0]   gt_addr;
+  logic [CELL_W:0]      gt_data;
+  logic [5:0]           sh_inactive;
+  logic [31:0]          growth_gen, lenia_cfg;
+  ca_pkg::lenia_sel_t   a_sel, e_sel;
 
   ca_regs #(.GRID_X(GRID_X), .GRID_Y(GRID_Y), .CELL_W(CELL_W), .NBH(NBH), .BND(BOUNDARY), .RULE(RULE),
             .DATA_W(DATA_W), .ADDR_W(ADDR_W), .BUF0_DEFAULT(BUF0_DEFAULT), .BUF1_DEFAULT(BUF1_DEFAULT),
@@ -88,8 +118,8 @@ module ca_core #(
     .pending_i(pending), .gen_count_i(gen_count), .pass_count_i(pass_count),
     .kern_wr_o(kern_wr), .gt_wr_o(gt_wr), .sh_wr_o(sh_wr), .commit_o(commit_w), .gt_idx_o(gt_idx),
     .lenia_wdata_o(lenia_wdata),
-    .kern_pending_i(1'b0), .growth_pending_i(1'b0), .growth_bank_i(1'b0), .growth_shift_i('0),
-    .growth_gen_i('0), .lenia_cfg_i('0));
+    .kern_pending_i(kern_pending), .growth_pending_i(growth_pending), .growth_bank_i(a_sel.bank),
+    .growth_shift_i(sh_inactive), .growth_gen_i(growth_gen), .lenia_cfg_i(lenia_cfg));
 
   ca_controller i_ctrl (
     .clk_i(aclk_i), .rst_ni(a_rst_n), .run_i(run), .pause_i(pause), .auto_i(auto_),
@@ -97,10 +127,34 @@ module ca_core #(
     .gens_per_frame_i(gens_per_frame), .pass_start_o(pass_start), .rd_fwd_en_o(fwd_en),
     .wr_commit_o(commit), .rd_done_i(rd_done), .wr_done_i(wr_done), .front_o(front), .busy_o(busy),
     .pending_o(pending), .gen_count_o(gen_count), .pass_count_o(pass_count), .pass_done_o(pass_done_o),
-    .hold_i(1'b0), .active_o(active));
+    .hold_i(hold), .active_o(active));
 
-  logic unused_lenia;
-  assign unused_lenia = ^{active, kern_wr, gt_wr, sh_wr, commit_w, gt_idx, lenia_wdata};
+  if (LENIA) begin : g_lenia
+    ca_lenia_ctrl #(.C(LC), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W), .CELL_W(CELL_W),
+                    .SH_DEFAULT(GROWTH_SH_DEFAULT)) i_lenia (
+      .aclk_i, .arst_ni(a_rst_n), .kern_wr_i(kern_wr), .gt_wr_i(gt_wr), .sh_wr_i(sh_wr), .commit_i(commit_w),
+      .gt_idx_i(gt_idx), .wdata_i(lenia_wdata), .run_i(run), .busy_i(busy), .active_i(active),
+      .gen_count_i(gen_count), .hold_o(hold), .kern_pending_o(kern_pending), .growth_pending_o(growth_pending),
+      .sh_inactive_o(sh_inactive), .growth_gen_o(growth_gen), .sel_o(a_sel), .gt_we_o(gt_we),
+      .gt_addr_o(gt_addr), .gt_data_o(gt_data), .eclk_i, .erst_ni(e_rst_n), .kern_valid_o(kern_valid),
+      .kern_data_o(kern_data));
+    assign lenia_cfg = {11'b0, 5'(CELL_W + 1), 4'(LUT_IDX_W), 4'(WEIGHT_W), 8'(LC)};
+  end else begin : g_no_lenia
+    assign hold           = 1'b0;
+    assign kern_pending   = 1'b0;
+    assign growth_pending = 1'b0;
+    assign sh_inactive    = '0;
+    assign growth_gen     = '0;
+    assign a_sel          = '0;
+    assign gt_we          = 1'b0;
+    assign gt_addr        = '0;
+    assign gt_data        = '0;
+    assign kern_valid     = 1'b0;
+    assign kern_data      = '0;
+    assign lenia_cfg      = '0;
+    logic unused_lenia;
+    assign unused_lenia = ^{active, kern_wr, gt_wr, sh_wr, commit_w, gt_idx, lenia_wdata};
+  end
 
   // The front buffer holds the current generation: read it, write the other.
   logic [ADDR_W-1:0] rd_base, wr_base;
@@ -139,15 +193,15 @@ module ca_core #(
     .wr_data_i(lb_wr_data), .row_done_i(lb_row_done), .popped_i(popped),
     .eclk_i, .erst_ni(e_rst_n), .col_o(col), .vld_o(col_vld));
 
-  logic unused_ext;
-  ca_params_cdc #(.EXT_W(1)) i_params_cdc (
-    .aclk_i, .arst_ni(a_rst_n), .capture_i(pass_start), .params_i(rule_params), .ext_i(1'b0),
-    .eclk_i, .erst_ni(e_rst_n), .params_o(e_params), .ext_o(unused_ext));
+  ca_params_cdc #(.EXT_W($bits(ca_pkg::lenia_sel_t))) i_params_cdc (
+    .aclk_i, .arst_ni(a_rst_n), .capture_i(pass_start), .params_i(rule_params), .ext_i(a_sel),
+    .eclk_i, .erst_ni(e_rst_n), .params_o(e_params), .ext_o(e_sel));
 
-  ca_engine #(.N(NBH), .CELL_W(CELL_W), .RULE(RULE), .MASK(MASK)) i_engine (
+  ca_engine #(.N(NBH), .CELL_W(CELL_W), .RULE(RULE), .MASK(MASK), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W),
+              .KERNEL_DEFAULT(KERNEL_DEFAULT), .GROWTH_INIT(GROWTH_INIT)) i_engine (
     .clk_i(eclk_i), .rst_ni(e_rst_n), .col_i(col), .vld_i(col_vld), .params_i(e_params),
-    .kern_valid_i(1'b0), .kern_data_i('0), .gt_clk_i(aclk_i), .gt_we_i(1'b0), .gt_addr_i('0), .gt_data_i('0),
-    .sel_i('0), .cell_o(new_cell), .vld_o(cell_vld));
+    .kern_valid_i(kern_valid), .kern_data_i(kern_data), .gt_clk_i(aclk_i), .gt_we_i(gt_we), .gt_addr_i(gt_addr),
+    .gt_data_i(gt_data), .sel_i(e_sel), .cell_o(new_cell), .vld_o(cell_vld));
 
   ca_cell_packer #(.CELL_W(CELL_W), .DATA_W(DATA_W)) i_packer (
     .clk_i(eclk_i), .rst_ni(e_rst_n), .cell_i(new_cell), .vld_i(cell_vld), .word_o(word), .word_vld_o(word_vld));
