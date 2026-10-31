@@ -9,6 +9,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+from .viridis import VIRIDIS
+
 # MATLAB rgb2gray coefficients (first row of the inverse NTSC/YIQ matrix).
 _RGB2GRAY = np.array([0.298936021293775, 0.587043074451121, 0.114020904255103])
 
@@ -93,11 +95,15 @@ def unpack_frame(data: bytes, grid_x: int, grid_y: int, cell_w: int) -> np.ndarr
 
 
 def palette_lut(cell_w: int, palette: str) -> np.ndarray:
-    """Return a (2**cell_w, 3) uint8 colour table."""
-    n = 1 << cell_w
+    """Return a (2**min(cell_w, 8), 3) uint8 colour table; wider cells index it
+    with their top 8 bits (see :func:`to_rgb`)."""
+    n = 1 << min(cell_w, 8)
     if palette == "gray":
         v = np.round(np.arange(n) * 255.0 / (n - 1)).astype(np.uint8)
         return np.stack([v, v, v], axis=1)
+    if palette == "viridis" and cell_w >= 8:
+        v = np.array(VIRIDIS, dtype=np.uint32)
+        return np.stack([v >> 16, (v >> 8) & 0xFF, v & 0xFF], axis=1).astype(np.uint8)
     if palette == "legacy4_windows" and cell_w == 4:
         return (np.array(_WINDOWS16) * 17).astype(np.uint8)
     if palette == "legacy4_gradient" and cell_w == 4:
@@ -114,7 +120,8 @@ def palette_lut(cell_w: int, palette: str) -> np.ndarray:
 
 def to_rgb(grid: np.ndarray, cell_w: int, palette: str) -> np.ndarray:
     """Map a grid to RGB with one of the palettes of the display consumer."""
-    return palette_lut(cell_w, palette)[np.asarray(grid, dtype=np.intp)]
+    idx = np.asarray(grid, dtype=np.intp) >> max(cell_w - 8, 0)
+    return palette_lut(cell_w, palette)[idx]
 
 
 def save_png(grid: np.ndarray, cell_w: int, palette: str, path) -> None:

@@ -5,7 +5,8 @@ import pytest
 import rtlsim
 from ca_model.grids import to_rgb
 
-PALETTES = {0: ("gray", 8), 1: ("legacy4_windows", 4), 2: ("legacy4_gradient", 4), 3: ("legacy8", 8)}
+PALETTES = {0: ("gray", 8), 1: ("legacy4_windows", 4), 2: ("legacy4_gradient", 4), 3: ("legacy8", 8),
+            4: ("viridis", 16)}
 HA, VA, NFRAMES, DW = 16, 8, 6, 32
 
 

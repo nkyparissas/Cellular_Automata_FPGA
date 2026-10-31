@@ -6,14 +6,14 @@
 module tb_video #(
   parameter int unsigned DATA_W = 32,
   parameter int unsigned CELL_W = 8,
-  parameter int unsigned PAL_ID = 0,      // 0 gray, 1 legacy4_windows, 2 legacy4_gradient, 3 legacy8
+  parameter int unsigned PAL_ID = 0,      // 0 gray, 1 legacy4_windows, 2 legacy4_gradient, 3 legacy8, 4 viridis
   parameter int unsigned NFRAMES = 6
 );
   localparam int unsigned HA = 16, HFP = 2, HS = 3, HB = 2, VA = 8, VFP = 1, VS = 2, VB = 1;
   localparam int unsigned HT = HA + HFP + HS + HB, VT = VA + VFP + VS + VB;
   localparam int unsigned WPF = HA * VA * CELL_W / DATA_W;
   localparam string       PAL = PAL_ID == 1 ? "legacy4_windows" : PAL_ID == 2 ? "legacy4_gradient" :
-                                PAL_ID == 3 ? "legacy8" : "gray";
+                                PAL_ID == 3 ? "legacy8" : PAL_ID == 4 ? "viridis" : "gray";
 
   logic aclk = 0, pclk = 0, rst_n = 0;
   always #3 aclk = ~aclk;

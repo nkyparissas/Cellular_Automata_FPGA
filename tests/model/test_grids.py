@@ -90,3 +90,18 @@ def test_palette_legacy4_windows():
 def test_palette_gray():
     assert to_rgb(np.array([[0, 15]], np.uint8), 4, "gray")[0].tolist() == [[0, 0, 0], [255, 255, 255]]
     assert to_rgb(np.array([[0, 255]], np.uint8), 8, "gray")[0].tolist() == [[0, 0, 0], [255, 255, 255]]
+
+
+def test_palette_top_bits():
+    """Wide cells index the palette with their top 8 bits; narrow palettes are unchanged."""
+    from ca_model.grids import palette_lut
+    for cw, name, crc in ((8, "legacy8", 0xcd1cc57d), (4, "legacy4_windows", 0x340f7918),
+                          (4, "legacy4_gradient", 0xd3a7b794), (8, "gray", 0xa4205de0), (4, "gray", 0xd3a7b794)):
+        assert zlib.crc32(palette_lut(cw, name).tobytes()) == crc, (cw, name)
+    c = np.arange(0, 1 << 16, 251, dtype=np.uint16)
+    for name in ("gray", "viridis"):
+        assert palette_lut(16, name).shape == (256, 3)
+        assert np.array_equal(to_rgb(c, 16, name), to_rgb(c | 0xFF, 16, name))
+        assert np.array_equal(to_rgb(c, 16, name), palette_lut(8, name)[c >> 8])
+    with pytest.raises(ValueError):
+        palette_lut(4, "viridis")
