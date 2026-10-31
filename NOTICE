@@ -31,3 +31,12 @@ Third-party components
 third_party/axi           pulp-platform/axi, Solderpad Hardware License 0.51
 third_party/common_cells  pulp-platform/common_cells, Solderpad Hardware License 0.51
 See third_party/README.md for versions and upstream locations.
+
+Third-party data
+----------------
+data/patterns             Lenia creature patterns (Orbium, Hydrogeminium, Smooth
+                          wanderer) from the Lenia tutorial,
+                          https://github.com/lenia-org/Lenia-Tutorial (commit
+                          2642cf995b90f4f37788aba440450098e36aa798),
+                          MIT License, Copyright (c) 2021 Open Science Lenia.
+                          The licence text is in data/patterns/LICENSE.

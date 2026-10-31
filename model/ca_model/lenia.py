@@ -13,6 +13,8 @@ distinct values of d <= R_max^2 (class 0 is the centre); offsets outside
 that disk belong to no class.
 """
 import functools
+import json
+from pathlib import Path
 
 import numpy as np
 
@@ -22,6 +24,7 @@ from .neigh import Boundary, _pad
 LENIA_PARAMS = ("R", "T", "mu", "sigma", "beta")
 DEFAULT_WEIGHT_W = 6
 DEFAULT_LUT_IDX_W = 12
+PATTERNS = Path(__file__).resolve().parents[2] / "data" / "patterns"
 
 
 def bell(x, m, s):
@@ -184,3 +187,10 @@ def validate(cfg: dict, where: str = "") -> None:
     if not 1 <= cfg["lut_idx_w"] <= 13:
         raise ValueError(f"{where}: lut_idx_w must be 1 .. 13")
 
+
+
+def load_pattern(name: str) -> dict:
+    """A creature from data/patterns/<name>.json (Lenia tutorial, MIT); cells as a float array."""
+    pat = json.loads((PATTERNS / f"{name}.json").read_text())
+    pat["cells"] = np.asarray(pat["cells"], dtype=np.float64)
+    return pat
