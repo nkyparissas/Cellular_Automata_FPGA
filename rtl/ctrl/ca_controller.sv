@@ -20,17 +20,20 @@ module ca_controller (
   output logic        pending_o,
   output logic [31:0] gen_count_o,
   output logic [31:0] pass_count_o,
-  output logic        pass_done_o
+  output logic        pass_done_o,
+  input  logic        hold_i,           // no new pass starts while set (Lenia kernel load)
+  output logic        active_o          // a pass is running
 );
   logic [15:0] repeat_cnt, ff_left;
   logic        active, rd_seen, wr_seen, start_req, start_ff;
 
-  assign busy_o = active || (ff_left != '0 && run_i && !pause_i);
+  assign busy_o   = active || (ff_left != '0 && run_i && !pause_i);
+  assign active_o = active;
 
   // Fast-forward passes run before new requests; both need RUN and no PAUSE
   // (a requested pass under PAUSE still runs, it just does not commit).
-  assign start_ff  = !active && run_i && !pause_i && ff_left != '0;
-  assign start_req = !active && run_i && !start_ff && (pending_o || auto_i);
+  assign start_ff  = !active && !hold_i && run_i && !pause_i && ff_left != '0;
+  assign start_req = !active && !hold_i && run_i && !start_ff && (pending_o || auto_i);
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin

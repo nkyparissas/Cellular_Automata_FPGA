@@ -73,6 +73,9 @@ module ca_core #(
   ca_pkg::rule_params_t rule_params, e_params;
   logic                 busy, front, pending, pass_start, fwd_en, commit, rd_done, wr_done;
   logic [31:0]          gen_count, pass_count;
+  logic                 active, kern_wr, gt_wr, sh_wr, commit_w;
+  logic [12:0]          gt_idx;
+  logic [31:0]          lenia_wdata;
 
   ca_regs #(.GRID_X(GRID_X), .GRID_Y(GRID_Y), .CELL_W(CELL_W), .NBH(NBH), .BND(BOUNDARY), .RULE(RULE),
             .DATA_W(DATA_W), .ADDR_W(ADDR_W), .BUF0_DEFAULT(BUF0_DEFAULT), .BUF1_DEFAULT(BUF1_DEFAULT),
@@ -82,14 +85,22 @@ module ca_core #(
     .run_o(run), .pause_o(pause), .auto_o(auto_), .reset_state_o(reset_state), .frame_req_o(reg_req),
     .frame_repeat_o(frame_repeat), .gens_per_frame_o(gens_per_frame), .buf0_addr_o(buf0),
     .buf1_addr_o(buf1), .rule_params_o(rule_params), .busy_i(busy), .front_i(front),
-    .pending_i(pending), .gen_count_i(gen_count), .pass_count_i(pass_count));
+    .pending_i(pending), .gen_count_i(gen_count), .pass_count_i(pass_count),
+    .kern_wr_o(kern_wr), .gt_wr_o(gt_wr), .sh_wr_o(sh_wr), .commit_o(commit_w), .gt_idx_o(gt_idx),
+    .lenia_wdata_o(lenia_wdata),
+    .kern_pending_i(1'b0), .growth_pending_i(1'b0), .growth_bank_i(1'b0), .growth_shift_i('0),
+    .growth_gen_i('0), .lenia_cfg_i('0));
 
   ca_controller i_ctrl (
     .clk_i(aclk_i), .rst_ni(a_rst_n), .run_i(run), .pause_i(pause), .auto_i(auto_),
     .reset_state_i(reset_state), .req_i(reg_req || frame_req_i), .frame_repeat_i(frame_repeat),
     .gens_per_frame_i(gens_per_frame), .pass_start_o(pass_start), .rd_fwd_en_o(fwd_en),
     .wr_commit_o(commit), .rd_done_i(rd_done), .wr_done_i(wr_done), .front_o(front), .busy_o(busy),
-    .pending_o(pending), .gen_count_o(gen_count), .pass_count_o(pass_count), .pass_done_o(pass_done_o));
+    .pending_o(pending), .gen_count_o(gen_count), .pass_count_o(pass_count), .pass_done_o(pass_done_o),
+    .hold_i(1'b0), .active_o(active));
+
+  logic unused_lenia;
+  assign unused_lenia = ^{active, kern_wr, gt_wr, sh_wr, commit_w, gt_idx, lenia_wdata};
 
   // The front buffer holds the current generation: read it, write the other.
   logic [ADDR_W-1:0] rd_base, wr_base;
@@ -128,9 +139,10 @@ module ca_core #(
     .wr_data_i(lb_wr_data), .row_done_i(lb_row_done), .popped_i(popped),
     .eclk_i, .erst_ni(e_rst_n), .col_o(col), .vld_o(col_vld));
 
-  ca_params_cdc i_params_cdc (
-    .aclk_i, .arst_ni(a_rst_n), .capture_i(pass_start), .params_i(rule_params),
-    .eclk_i, .erst_ni(e_rst_n), .params_o(e_params));
+  logic unused_ext;
+  ca_params_cdc #(.EXT_W(1)) i_params_cdc (
+    .aclk_i, .arst_ni(a_rst_n), .capture_i(pass_start), .params_i(rule_params), .ext_i(1'b0),
+    .eclk_i, .erst_ni(e_rst_n), .params_o(e_params), .ext_o(unused_ext));
 
   ca_engine #(.N(NBH), .CELL_W(CELL_W), .RULE(RULE), .MASK(MASK)) i_engine (
     .clk_i(eclk_i), .rst_ni(e_rst_n), .col_i(col), .vld_i(col_vld), .params_i(e_params),

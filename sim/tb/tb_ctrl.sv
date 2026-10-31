@@ -21,6 +21,8 @@ module tb_ctrl;
   logic [15:0] frame_repeat, gpf;
   logic [31:0] buf0, buf1, gen_count, pass_count;
   ca_pkg::rule_params_t params;
+  logic        kern_wr, gt_wr, sh_wr, commit_w;
+  int unsigned lenia_strobes = 0;
 
   ca_regs #(.GRID_X(1920), .GRID_Y(1080), .CELL_W(8), .NBH(29), .BND(ca_pkg::BND_CYLINDRICAL),
             .RULE(ca_pkg::RULE_GHM), .DATA_W(128), .ADDR_W(32), .BUF0_DEFAULT(64'h1000),
@@ -29,14 +31,20 @@ module tb_ctrl;
     .clk_i(clk), .rst_ni(rst_n), .axil_req_i(lreq), .axil_resp_o(lresp), .run_o(run), .pause_o(pause),
     .auto_o(auto_), .reset_state_o(reset_state), .frame_req_o(frame_req), .frame_repeat_o(frame_repeat),
     .gens_per_frame_o(gpf), .buf0_addr_o(buf0), .buf1_addr_o(buf1), .rule_params_o(params),
-    .busy_i(busy), .front_i(front), .pending_i(pending), .gen_count_i(gen_count), .pass_count_i(pass_count));
+    .busy_i(busy), .front_i(front), .pending_i(pending), .gen_count_i(gen_count), .pass_count_i(pass_count),
+    // A GHM core: the Lenia inputs are driven high to show that they never reach a read.
+    .kern_wr_o(kern_wr), .gt_wr_o(gt_wr), .sh_wr_o(sh_wr), .commit_o(commit_w), .gt_idx_o(), .lenia_wdata_o(),
+    .kern_pending_i(1'b1), .growth_pending_i(1'b1), .growth_bank_i(1'b1), .growth_shift_i('1),
+    .growth_gen_i('1), .lenia_cfg_i('1));
 
   ca_controller i_ctrl (
     .clk_i(clk), .rst_ni(rst_n), .run_i(run), .pause_i(pause), .auto_i(auto_), .reset_state_i(reset_state),
     .req_i(frame_req), .frame_repeat_i(frame_repeat), .gens_per_frame_i(gpf), .pass_start_o(pass_start),
     .rd_fwd_en_o(fwd), .wr_commit_o(commit), .rd_done_i(rd_done), .wr_done_i(wr_done), .front_o(front),
     .busy_o(busy), .pending_o(pending), .gen_count_o(gen_count), .pass_count_o(pass_count),
-    .pass_done_o(pass_done));
+    .pass_done_o(pass_done), .hold_i(1'b0), .active_o());
+
+  always_ff @(posedge clk) if (rst_n && (kern_wr || gt_wr || sh_wr || commit_w)) lenia_strobes++;
 
   // Reader/writer stand-ins and a log of every pass.
   int unsigned rd_t = 0, wr_t = 0, passes = 0;
@@ -60,13 +68,13 @@ module tb_ctrl;
     end
   end
 
-  task automatic rd(input logic [7:0] a, output logic [31:0] d);
-    bfm.read({24'h0, a}, d);
+  task automatic rd(input logic [15:0] a, output logic [31:0] d);
+    bfm.read({16'h0, a}, d);
   endtask
-  task automatic wr(input logic [7:0] a, input logic [31:0] d);
-    bfm.write({24'h0, a}, d);
+  task automatic wr(input logic [15:0] a, input logic [31:0] d);
+    bfm.write({16'h0, a}, d);
   endtask
-  task automatic expect_reg(input logic [7:0] a, input logic [31:0] e, input string what);
+  task automatic expect_reg(input logic [15:0] a, input logic [31:0] e, input string what);
     logic [31:0] d;
     rd(a, d);
     if (d !== e) $fatal(1, "%s: reg 0x%0h = 0x%0h, expected 0x%0h", what, a, d, e);
@@ -203,6 +211,29 @@ module tb_ctrl;
         expect_reg(REG_PASS_COUNT, 0, "pass count cleared");
         expect_reg(REG_STATUS, 0, "front cleared");
         expect_reg(REG_CTRL, 32'h1, "reset bit self-clears");
+      end
+      "decode16": begin
+        // 16 address bits are decoded: 0x0104 is unmapped, the map repeats every 64 KB.
+        wr(REG_CTRL, 32'h2);
+        expect_reg(16'h0104, 0, "0x0104 is unmapped");
+        wr(16'h0104, 32'h4);
+        expect_reg(REG_CTRL, 32'h2, "a write to 0x0104 must not reach CTRL");
+        bfm.read(32'h0001_0004, d);
+        if (d !== 32'h2) $fatal(1, "0x10004 must alias CTRL, read 0x%0h", d);
+        bfm.write(32'h0001_0004, 32'h0);
+        expect_reg(REG_CTRL, 32'h0, "a write to 0x10004 reaches CTRL");
+      end
+      "lenia_absent": begin
+        logic [15:0] lregs [6];
+        lregs = '{REG_LENIA_CFG, REG_KERNEL_DATA, REG_GROWTH_SHIFT, REG_GROWTH_COMMIT, REG_GROWTH_GEN,
+                  REG_GROWTH_TABLE + 16'h0010};
+        foreach (lregs[k]) begin
+          wr(lregs[k], 32'hFFFF_FFFF);
+          expect_reg(lregs[k], 0, "Lenia register in a GHM core");
+        end
+        expect_reg(REG_STATUS, 0, "STATUS bits 3 to 5 read 0 in a GHM core");
+        wait_cycles(5);
+        if (lenia_strobes != 0) $fatal(1, "%0d Lenia strobes in a GHM core", lenia_strobes);
       end
       default: $fatal(1, "unknown case %s", tc);
     endcase

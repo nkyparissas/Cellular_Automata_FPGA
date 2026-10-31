@@ -1,5 +1,10 @@
-// AXI4-Lite register file (spec Section 10). Only the low 8 address bits are
-// decoded; unmapped reads return 0 and every access responds OKAY.
+// AXI4-Lite register file (spec Section 10; Lenia design spec Section 6.4).
+// The low 16 address bits are decoded, so the map repeats every 64 KB;
+// unmapped reads return 0 and every access responds OKAY. The Lenia registers
+// (LENIA_CFG, KERNEL_DATA, GROWTH_SHIFT, GROWTH_COMMIT, GROWTH_GEN, the
+// GROWTH_TABLE window at 0x8000) and STATUS bits 3 to 5 exist in Lenia cores
+// only; other cores read 0 there and ignore the writes. Lenia writes leave as
+// one-cycle strobes with the write data (ca_lenia_ctrl decides what to accept).
 module ca_regs
   import ca_regs_pkg::*;
 #(
@@ -36,11 +41,25 @@ module ca_regs
   input  logic                 front_i,
   input  logic                 pending_i,
   input  logic [31:0]          gen_count_i,
-  input  logic [31:0]          pass_count_i
+  input  logic [31:0]          pass_count_i,
+  output logic                 kern_wr_o,
+  output logic                 gt_wr_o,
+  output logic                 sh_wr_o,
+  output logic                 commit_o,
+  output logic [12:0]          gt_idx_o,
+  output logic [31:0]          lenia_wdata_o,
+  input  logic                 kern_pending_i,
+  input  logic                 growth_pending_i,
+  input  logic                 growth_bank_i,
+  input  logic [5:0]           growth_shift_i,
+  input  logic [31:0]          growth_gen_i,
+  input  logic [31:0]          lenia_cfg_i
 );
+  localparam bit LENIA = RULE == ca_pkg::RULE_LENIA;
+
   logic [63:0] buf0_q, buf1_q;
   logic        wr_go, rd_go;
-  logic [7:0]  waddr, raddr;
+  logic [15:0] waddr, raddr;
   logic [31:0] wdata, rdata;
   logic [3:0]  wstrb;
 
@@ -52,8 +71,8 @@ module ca_regs
   // only after the AW/W (AR) handshake has completed (AXI4 A3.3.1).
   assign wr_go = axil_req_i.aw_valid && axil_req_i.w_valid && !axil_resp_o.b_valid;
   assign rd_go = axil_req_i.ar_valid && !axil_resp_o.r_valid;
-  assign waddr = axil_req_i.aw.addr[7:0];
-  assign raddr = axil_req_i.ar.addr[7:0];
+  assign waddr = axil_req_i.aw.addr[15:0];
+  assign raddr = axil_req_i.ar.addr[15:0];
   assign wdata = axil_req_i.w.data;
   assign wstrb = axil_req_i.w.strb;
 
@@ -66,7 +85,8 @@ module ca_regs
     unique case (raddr)
       REG_ID:             rdata = CA_ID;
       REG_CTRL:           rdata = 32'({auto_o, pause_o, run_o});
-      REG_STATUS:         rdata = 32'({pending_i, front_i, busy_i});
+      REG_STATUS:         rdata = 32'({LENIA && growth_bank_i, LENIA && growth_pending_i, LENIA && kern_pending_i,
+                                       pending_i, front_i, busy_i});
       REG_FRAME_REPEAT:   rdata = 32'(frame_repeat_o);
       REG_GENS_PER_FRAME: rdata = 32'(gens_per_frame_o);
       REG_GEN_COUNT:      rdata = gen_count_i;
@@ -77,8 +97,11 @@ module ca_regs
       REG_BUF1_HI:        rdata = buf1_q[63:32];
       REG_GRID_DIM:       rdata = {16'(GRID_Y), 16'(GRID_X)};
       REG_CORE_CFG:       rdata = {8'(DATA_W / 8), 4'(RULE), 2'b0, 2'(BND), 8'(NBH), 8'(CELL_W)};
+      REG_LENIA_CFG:      rdata = LENIA ? lenia_cfg_i : '0;
+      REG_GROWTH_SHIFT:   rdata = LENIA ? 32'(growth_shift_i) : '0;
+      REG_GROWTH_GEN:     rdata = LENIA ? growth_gen_i : '0;
       default: begin
-        if (raddr >= REG_RULE_PARAM0 && raddr < REG_RULE_PARAM0 + 8'(4 * ca_pkg::NUM_RULE_PARAMS))
+        if (raddr >= REG_RULE_PARAM0 && raddr < REG_RULE_PARAM0 + 16'(4 * ca_pkg::NUM_RULE_PARAMS))
           rdata = rule_params_o[3'((raddr - REG_RULE_PARAM0) >> 2)];
       end
     endcase
@@ -92,6 +115,10 @@ module ca_regs
       auto_o           <= 1'b0;
       reset_state_o    <= 1'b0;
       frame_req_o      <= 1'b0;
+      kern_wr_o        <= 1'b0;
+      gt_wr_o          <= 1'b0;
+      sh_wr_o          <= 1'b0;
+      commit_o         <= 1'b0;
       frame_repeat_o   <= 16'(FRAME_REPEAT_DEFAULT);
       gens_per_frame_o <= 16'd1;
       buf0_q           <= BUF0_DEFAULT;
@@ -100,6 +127,10 @@ module ca_regs
     end else begin
       reset_state_o        <= 1'b0;
       frame_req_o          <= 1'b0;
+      kern_wr_o            <= 1'b0;
+      gt_wr_o              <= 1'b0;
+      sh_wr_o              <= 1'b0;
+      commit_o             <= 1'b0;
       axil_resp_o.aw_ready <= 1'b0;
       axil_resp_o.w_ready  <= 1'b0;
       axil_resp_o.ar_ready <= 1'b0;
@@ -112,6 +143,8 @@ module ca_regs
       if (wr_go && !axil_resp_o.aw_ready) begin
         axil_resp_o.aw_ready <= 1'b1;
         axil_resp_o.w_ready  <= 1'b1;
+        lenia_wdata_o        <= wdata;
+        gt_idx_o             <= waddr[14:2];
         unique case (waddr)
           REG_CTRL: begin
             if (wstrb[0]) begin
@@ -128,8 +161,13 @@ module ca_regs
           REG_BUF0_HI:        buf0_q[63:32]    <= ((buf0_q[63:32]) & ~wmask) | (wdata & wmask);
           REG_BUF1_LO:        buf1_q[31:0]     <= ((buf1_q[31:0]) & ~wmask) | (wdata & wmask);
           REG_BUF1_HI:        buf1_q[63:32]    <= ((buf1_q[63:32]) & ~wmask) | (wdata & wmask);
+          REG_KERNEL_DATA:    kern_wr_o        <= LENIA;
+          REG_GROWTH_SHIFT:   sh_wr_o          <= LENIA;
+          REG_GROWTH_COMMIT:  commit_o         <= LENIA;
           default: begin
-            if (waddr >= REG_RULE_PARAM0 && waddr < REG_RULE_PARAM0 + 8'(4 * ca_pkg::NUM_RULE_PARAMS))
+            if (waddr[15])
+              gt_wr_o <= LENIA;
+            else if (waddr >= REG_RULE_PARAM0 && waddr < REG_RULE_PARAM0 + 16'(4 * ca_pkg::NUM_RULE_PARAMS))
               rule_params_o[3'((waddr - REG_RULE_PARAM0) >> 2)] <=
                 ((rule_params_o[3'((waddr - REG_RULE_PARAM0) >> 2)]) & ~wmask) | (wdata & wmask);
           end

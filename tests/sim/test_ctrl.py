@@ -4,7 +4,7 @@ import pytest
 import rtlsim
 
 CASES = ["regs_rw", "repeat_cadence", "gens_per_frame", "pause", "req_merge", "auto",
-         "run_clear_midpass", "midpass_changes", "reset_state"]
+         "run_clear_midpass", "midpass_changes", "reset_state", "decode16", "lenia_absent"]
 
 
 @pytest.fixture(scope="module")

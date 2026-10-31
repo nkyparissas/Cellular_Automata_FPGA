@@ -1,4 +1,4 @@
-// Lint-only top: ca_regs with concrete AXI4-Lite types.
+// Lint-only top: ca_regs (Lenia variant) with concrete AXI4-Lite types.
 `include "axi/typedef.svh"
 module lint_regs (
   input  logic        clk_i,
@@ -22,7 +22,13 @@ module lint_regs (
   input  logic        front_i,
   input  logic        pending_i,
   input  logic [31:0] gen_count_i,
-  input  logic [31:0] pass_count_i
+  input  logic [31:0] pass_count_i,
+  input  logic        kern_pending_i,
+  input  logic        growth_pending_i,
+  input  logic        growth_bank_i,
+  input  logic [5:0]  growth_shift_i,
+  input  logic [31:0] growth_gen_i,
+  input  logic [31:0] lenia_cfg_i
 );
   typedef logic [31:0] addr_t;
   typedef logic [31:0] data_t;
@@ -54,10 +60,16 @@ module lint_regs (
   logic [15:0] frame_repeat, gpf;
   logic [31:0] buf0, buf1;
   ca_pkg::rule_params_t params;
-  ca_regs #(.axil_req_t(axil_req_t), .axil_resp_t(axil_resp_t)) i_dut (
+  logic        kern_wr, gt_wr, sh_wr, commit;
+  logic [12:0] gt_idx;
+  logic [31:0] lenia_wdata;
+  ca_regs #(.RULE(ca_pkg::RULE_LENIA), .axil_req_t(axil_req_t), .axil_resp_t(axil_resp_t)) i_dut (
     .clk_i, .rst_ni, .axil_req_i(req), .axil_resp_o(resp), .run_o(run), .pause_o(pause), .auto_o(auto_),
     .reset_state_o(reset_state), .frame_req_o(frame_req), .frame_repeat_o(frame_repeat),
     .gens_per_frame_o(gpf), .buf0_addr_o(buf0), .buf1_addr_o(buf1), .rule_params_o(params),
-    .busy_i, .front_i, .pending_i, .gen_count_i, .pass_count_i);
-  assign status_o = {run, pause, auto_, reset_state, frame_req, ^frame_repeat, ^gpf, ^buf0, ^buf1, ^params, 22'b0};
+    .busy_i, .front_i, .pending_i, .gen_count_i, .pass_count_i, .kern_wr_o(kern_wr), .gt_wr_o(gt_wr),
+    .sh_wr_o(sh_wr), .commit_o(commit), .gt_idx_o(gt_idx), .lenia_wdata_o(lenia_wdata), .kern_pending_i,
+    .growth_pending_i, .growth_bank_i, .growth_shift_i, .growth_gen_i, .lenia_cfg_i);
+  assign status_o = {run, pause, auto_, reset_state, frame_req, ^frame_repeat, ^gpf, ^buf0, ^buf1, ^params,
+                     kern_wr, gt_wr, sh_wr, commit, ^gt_idx, ^lenia_wdata, 16'b0};
 endmodule

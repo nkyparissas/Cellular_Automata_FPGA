@@ -47,19 +47,19 @@ module ca_buttons_axil
 
   typedef enum logic [2:0] {S_IDLE, S_RD, S_RD_R, S_WR, S_WR_B} state_e;
   state_e      state;
-  logic [7:0]  waddr;
+  logic [15:0] waddr;
   logic [31:0] wdata;
   logic        aw_done, w_done;
 
   always_comb begin
     m_axil_req_o          = '0;
-    m_axil_req_o.aw.addr  = {24'h0, waddr};
+    m_axil_req_o.aw.addr  = {16'h0, waddr};
     m_axil_req_o.aw_valid = state == S_WR && !aw_done;
     m_axil_req_o.w.data   = wdata;
     m_axil_req_o.w.strb   = '1;
     m_axil_req_o.w_valid  = state == S_WR && !w_done;
     m_axil_req_o.b_ready  = state == S_WR_B;
-    m_axil_req_o.ar.addr  = {24'h0, REG_CTRL};
+    m_axil_req_o.ar.addr  = {16'h0, REG_CTRL};
     m_axil_req_o.ar_valid = state == S_RD;
     m_axil_req_o.r_ready  = state == S_RD_R;
   end
