@@ -1,6 +1,6 @@
 # Digilent Nexys 4 DDR (display variant)
 
-This folder contains only what is specific to the board: the top level (`top_nexys4ddr.sv`: two clocking wizards as in the legacy design, one for the 200/325 MHz MIG clocks and one for the 148.5 MHz pixel clock, DDR2 MIG with an AXI4 slave, 4-bit VGA, UART, buttons, LEDs), pin constraints, the MIG project and a Vivado build script. The design itself is `rtl/top/ca_display_system.sv`.
+This folder contains only what is specific to the board: the top level (`top_nexys4ddr.sv`: two clocking wizards as in the legacy design, one for the 200/325 MHz MIG clocks and one for the 148.5 MHz pixel clock, DDR2 MIG with an AXI4 slave, 4-bit VGA, UART, buttons, LEDs), pin constraints, the MIG project and a Vivado build script. The design itself is `rtl/top/ca_display_system.sv`; `docs/figures/system_display.png` shows the whole system.
 
 **Status: unverified on hardware and in Vivado.** The RTL around the board top is simulated (`tests/sim/test_uart_board.py`) and the top level lints against stub IP modules (`make lint-boards`), but `build.tcl` and `ip/mig_ddr2_axi.prj` (the legacy DDR2 settings with the AXI4 interface enabled: 128-bit data, 4-bit ID, 27-bit address) were written without Vivado.
 

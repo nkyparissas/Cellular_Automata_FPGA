@@ -46,6 +46,13 @@ The controller starts a pass when RUN is set and a frame request is pending, fro
 * Display boards: `rtl/top/ca_display_system.sv` combines the core with `rtl/consumers/ca_video_out.sv` (async FIFO, video timing, palette, frame request in vertical blanking), the UART bridge (`rtl/io/ca_uart_bridge.sv`) and the buttons (`rtl/io/ca_buttons_axil.sv`) behind pulp `axi_mux` and `axi_lite_mux`. `boards/nexys4ddr/` adds only clocks, the DDR2 MIG and pins.
 * PCIe hosts: `boards/xdma_template/` instantiates the core next to XDMA in memory-mapped mode; the host moves frames by DMA and requests passes through the register file.
 
+![The CA system with the display consumer, UART and buttons](figures/system_display.png)
+
+*The display variant (Nexys 4 DDR): the display requests one pass per video frame and shows the streamed generation, the UART bridge gives the host register and memory access, and the buttons set the speed. The CA core is drawn the same way in both system figures; its shading marks the clock domains.*
+
+![The CA system with a PCIe host](figures/system_pcie.png)
+
+*The PCIe variant (XDMA template): the host moves frames by DMA through the same DDR, starts passes through the `FRAME_REQ` register on the AXI-Lite BAR and can take `pass_done` as an interrupt; the core's frame stream is not used.*
 
 ## Clocks and resets
 

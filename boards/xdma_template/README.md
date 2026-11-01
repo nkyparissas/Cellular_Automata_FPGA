@@ -1,6 +1,6 @@
 # Generic PCIe/XDMA template
 
-A starting point for any Xilinx board with a PCIe edge connector and on-board DDR. The host reads and writes the board DDR through the XDMA DMA channels (memory-mapped mode) and controls the core through the XDMA AXI-Lite BAR; the core's consumer handshake is the `FRAME_REQ` register.
+A starting point for any Xilinx board with a PCIe edge connector and on-board DDR. The host reads and writes the board DDR through the XDMA DMA channels (memory-mapped mode) and controls the core through the XDMA AXI-Lite BAR; the core's consumer handshake is the `FRAME_REQ` register. `docs/figures/system_pcie.png` shows the whole system.
 
 **Status: unverified template.** It was written without Vivado and without a target board. `ca_core_xdma.v` lints against the project RTL (`make lint-boards`) and elaborates under slang (`tests/test_boards_static.py`); `bd_ca_xdma.tcl` has not been run.
 

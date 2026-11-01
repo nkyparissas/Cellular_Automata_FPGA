@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="905" viewBox="0 0 1360 905">
+<title>CA system with a PCIe host</title>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L10,5 L0,9 z" fill="#2F5597"/></marker><linearGradient id="cdc_e" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="#ffffff"/><stop offset="0.5" stop-color="#DEEBF7"/></linearGradient><linearGradient id="cdc_p" x1="0" y1="0" x2="1" y2="0"><stop offset="0.5" stop-color="#ffffff"/><stop offset="0.5" stop-color="#E7E6E6"/></linearGradient></defs>
+<rect width="1360" height="905" fill="#ffffff"/>
+<g font-family="Calibri, Carlito, 'Segoe UI', 'Liberation Sans', Arial, sans-serif" fill="#2F5597">
+<rect x="225" y="25" width="935" height="805" rx="0" fill="none" stroke="#2F5597" stroke-width="1.2" stroke-dasharray="5,3"/>
+<text x="235" y="42" font-size="12" text-anchor="start" font-weight="normal" font-style="normal">FPGA: Vivado block design (boards/xdma_template/bd_ca_xdma.tcl, unverified template)</text>
+<rect x="20" y="140" width="180" height="180" rx="0" fill="none" stroke="#2F5597" stroke-width="1.2" stroke-dasharray="5,3"/>
+<text x="28" y="157" font-size="12" text-anchor="start" font-weight="normal" font-style="normal">Host PC</text>
+<rect x="32" y="166" width="156" height="40" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="110.0" y="182.9" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">ca_host CLI</text>
+<text x="110.0" y="195.9" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">--transport xdma</text>
+<rect x="32" y="218" width="156" height="34" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="110.0" y="231.9" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">XDMA Linux driver</text>
+<text x="110.0" y="244.9" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">(dma_ip_drivers)</text>
+<path d="M 110.0,206.0 L 110.0,216.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="32" y="272" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">/dev/xdma0_user: registers</text>
+<text x="32" y="286" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">/dev/xdma0_h2c_0: DMA to DDR</text>
+<text x="32" y="300" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">/dev/xdma0_c2h_0: DMA from DDR</text>
+<path d="M 202.0,200.0 L 253.0,200.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)" marker-start="url(#arr)"/>
+<text x="203" y="194" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">PCIe</text>
+<rect x="255" y="150" width="190" height="100" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="350.0" y="184.4" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">XDMA (memory-mapped)</text>
+<text x="350.0" y="197.4" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">PCIe Gen3 x8 (example)</text>
+<text x="350.0" y="209.9" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">1 H2C + 1 C2H DMA channel</text>
+<text x="350.0" y="222.4" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">AXI-Lite BAR 0, 64 KB</text>
+<rect x="480" y="208" width="90" height="42" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="525.0" y="225.9" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">SmartConnect</text>
+<text x="525.0" y="238.9" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">smc_lite</text>
+<path d="M 445.0,229.0 L 478.0,229.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 525.0,250.0 L 525.0,280.0 L 365.0,280.0 L 365.0,300.0" fill="none" stroke="#2F5597" stroke-width="1.2"/>
+<text x="531" y="272" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">AXI4-Lite: registers</text>
+<path d="M 445.0,168.0 L 975.0,168.0 L 975.0,672.0 L 697.0,672.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="455" y="162" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">M_AXI: AXI4 DMA (seed upload, frame download)</text>
+<path d="M 250.0,375.0 L 238.0,375.0 L 238.0,262.0 L 300.0,262.0 L 300.0,252.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="306" y="266" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">pass_done → usr_irq_req</text>
+<rect x="480" y="52" width="200" height="30" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="580.0" y="70.2" font-size="10.5" text-anchor="middle" font-weight="normal" font-style="normal">Clocking wizard: eclk 200 MHz</text>
+<rect x="480" y="90" width="200" height="28" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="580.0" y="107.2" font-size="10.5" text-anchor="middle" font-weight="normal" font-style="normal">proc_sys_reset: eclk reset</text>
+<text x="710" y="66" font-size="10.5" text-anchor="start" font-weight="normal" font-style="normal">aclk: XDMA axi_aclk (AXI side of the core)</text>
+<text x="710" y="81" font-size="10.5" text-anchor="start" font-weight="normal" font-style="normal">eclk: 200 MHz from the clocking wizard (engine)</text>
+<text x="710" y="96" font-size="10.5" text-anchor="start" font-weight="normal" font-style="normal">DDR user clock: crossed inside smc_mem</text>
+<rect x="250" y="300" width="700" height="320" rx="0" fill="none" stroke="#2F5597" stroke-width="1.2" stroke-dasharray="5,3"/>
+<text x="940" y="317" font-size="12" text-anchor="end" font-weight="normal" font-style="normal">CA core (rtl/top/ca_core.sv)</text>
+<text x="940" y="612" font-size="9.5" text-anchor="end" font-weight="normal" font-style="normal">wrapped by ca_core_xdma.v and ca_core_flat</text>
+<rect x="270" y="340" width="190" height="70" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="365.0" y="359.4" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Registers, pass controller,</text>
+<text x="365.0" y="373.1" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Lenia configuration</text>
+<text x="365.0" y="385.7" font-size="9.5" text-anchor="middle" font-weight="normal" font-style="normal">ca_regs, ca_controller,</text>
+<text x="365.0" y="397.5" font-size="9.5" text-anchor="middle" font-weight="normal" font-style="normal">ca_lenia_ctrl</text>
+<rect x="490" y="340" width="150" height="32" rx="0" fill="url(#cdc_e)" stroke="#2F5597" stroke-width="1.2"/>
+<text x="565.0" y="353.0" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">Parameter crossing</text>
+<text x="565.0" y="365.1" font-size="9.5" text-anchor="middle" font-weight="normal" font-style="normal">(at pass start)</text>
+<rect x="490" y="420" width="150" height="45" rx="0" fill="url(#cdc_e)" stroke="#2F5597" stroke-width="1.2"/>
+<text x="565.0" y="439.7" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Line buffer (N+1 rows)</text>
+<text x="565.0" y="452.2" font-size="9.5" text-anchor="middle" font-weight="normal" font-style="normal">aclk write, eclk read</text>
+<rect x="659" y="412" width="187" height="61" rx="0" fill="none" stroke="#2F5597" stroke-width="0.8" stroke-dasharray="5,3"/>
+<text x="665" y="408" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">ca_engine</text>
+<rect x="665" y="420" width="80" height="45" rx="0" fill="#DEEBF7" stroke="#2F5597" stroke-width="1.2"/>
+<text x="705.0" y="439.4" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Window</text>
+<text x="705.0" y="452.4" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">N × N</text>
+<rect x="760" y="420" width="80" height="45" rx="0" fill="#DEEBF7" stroke="#2F5597" stroke-width="1.2"/>
+<text x="800.0" y="439.4" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Rule</text>
+<text x="800.0" y="452.4" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">ca_rule_*</text>
+<rect x="855" y="420" width="80" height="45" rx="0" fill="#DEEBF7" stroke="#2F5597" stroke-width="1.2"/>
+<text x="895.0" y="439.4" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Cell</text>
+<text x="895.0" y="452.4" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">packer</text>
+<rect x="490" y="500" width="110" height="40" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="545.0" y="517.2" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Frame reader</text>
+<text x="545.0" y="529.7" font-size="9.5" text-anchor="middle" font-weight="normal" font-style="normal">ca_frame_reader</text>
+<rect x="660" y="500" width="110" height="40" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="715.0" y="517.2" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Frame writer</text>
+<text x="715.0" y="529.7" font-size="9.5" text-anchor="middle" font-weight="normal" font-style="normal">ca_frame_writer</text>
+<rect x="815" y="500" width="120" height="40" rx="0" fill="url(#cdc_e)" stroke="#2F5597" stroke-width="1.2"/>
+<text x="875.0" y="517.2" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">Async FIFO</text>
+<text x="875.0" y="529.7" font-size="9.5" text-anchor="middle" font-weight="normal" font-style="normal">eclk → aclk</text>
+<rect x="530" y="580" width="240" height="22" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="650.0" y="594.0" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">axi_rw_join: one AXI4 master</text>
+<path d="M 560.0,500.0 L 560.0,467.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 640.0,442.5 L 663.0,442.5" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 745.0,442.5 L 758.0,442.5" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 840.0,442.5 L 853.0,442.5" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 895.0,465.0 L 895.0,498.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 815.0,520.0 L 772.0,520.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 570.0,580.0 L 570.0,542.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="564" y="557" font-size="9.5" text-anchor="end" font-weight="normal" font-style="normal">AR/R: rows of the current</text>
+<text x="564" y="569" font-size="9.5" text-anchor="end" font-weight="normal" font-style="normal">generation from DDR</text>
+<path d="M 740.0,540.0 L 740.0,578.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="734" y="557" font-size="9.5" text-anchor="end" font-weight="normal" font-style="normal">AW/W/B: new rows to the</text>
+<text x="734" y="569" font-size="9.5" text-anchor="end" font-weight="normal" font-style="normal">back buffer in DDR</text>
+<path d="M 650.0,602.0 L 650.0,620.0" fill="none" stroke="#2F5597" stroke-width="1.2"/>
+<path d="M 490.0,522.0 L 420.0,522.0 L 420.0,620.0" fill="none" stroke="#2F5597" stroke-width="1.2"/>
+<text x="566" y="481" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">rows</text>
+<path d="M 460.0,356.0 L 488.0,356.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+<path d="M 640.0,356.0 L 820.0,356.0 L 820.0,418.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+<text x="648" y="351" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">rule parameters, table selection</text>
+<path d="M 460.0,395.0 L 790.0,395.0 L 790.0,418.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+<text x="472" y="390" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">kernel words, growth-table writes (Lenia)</text>
+<path d="M 365.0,410.0 L 365.0,488.0 L 710.0,488.0 L 710.0,498.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+<path d="M 515.0,488.0 L 515.0,498.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)" stroke-dasharray="5,3"/>
+<text x="372" y="483" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">pass start, commit</text>
+<path d="M 365.0,300.0 L 365.0,338.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 310.0,620.0 L 310.0,412.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 270.0,375.0 L 250.0,375.0" fill="none" stroke="#2F5597" stroke-width="1.2"/>
+<path d="M 420.0,620.0 L 420.0,642.0" fill="none" stroke="#2F5597" stroke-width="1.2"/>
+<line x1="414" y1="642" x2="426" y2="642" stroke="#2F5597" stroke-width="1.6"/>
+<text x="426" y="639" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">m_axis: not used (tready = 1)</text>
+<path d="M 310.0,642.0 L 310.0,620.0" fill="none" stroke="#2F5597" stroke-width="1.2"/>
+<line x1="304" y1="642" x2="316" y2="642" stroke="#2F5597" stroke-width="1.6"/>
+<text x="304" y="639" font-size="9.5" text-anchor="end" font-weight="normal" font-style="normal">frame_req = 0</text>
+<rect x="605" y="650" width="90" height="45" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="650.0" y="669.4" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">SmartConnect</text>
+<text x="650.0" y="682.4" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">smc_mem (2:1)</text>
+<path d="M 650.0,620.0 L 650.0,648.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="656" y="638" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">AXI4, data_w = 512 bits</text>
+<rect x="560" y="755" width="180" height="56" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="650.0" y="773.7" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">DDR4 controller (ddr4_0)</text>
+<text x="650.0" y="786.6" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">from board automation</text>
+<text x="650.0" y="799.1" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">own user clock</text>
+<path d="M 650.0,695.0 L 650.0,753.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="656" y="747" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">AXI4</text>
+<rect x="1180" y="755" width="165" height="56" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="1262.5" y="773.7" font-size="11" text-anchor="middle" font-weight="normal" font-style="normal">DDR4 SDRAM (board)</text>
+<text x="1262.5" y="786.6" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">BUF0 at 0x0000_0000</text>
+<text x="1262.5" y="799.1" font-size="10" text-anchor="middle" font-weight="normal" font-style="normal">BUF1 at 0x1000_0000</text>
+<path d="M 742.0,783.0 L 1178.0,783.0" fill="none" stroke="#2F5597" stroke-width="1.2" marker-end="url(#arr)" marker-start="url(#arr)"/>
+<text x="900" y="777" font-size="9.5" text-anchor="start" font-weight="normal" font-style="normal">DDR4</text>
+<text x="1180" y="150" font-size="11" text-anchor="start" font-weight="bold" font-style="normal">How the PCIe variant runs</text>
+<text x="1180" y="168" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">1. The host writes the seed into</text>
+<text x="1180" y="182" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">BUF0 by H2C DMA.</text>
+<text x="1180" y="196" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">2. Through BAR 0 it sets RUN and</text>
+<text x="1180" y="210" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">writes FRAME_REQ (the doorbell).</text>
+<text x="1180" y="224" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">3. Each pass reads the front</text>
+<text x="1180" y="238" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">buffer and writes the back buffer;</text>
+<text x="1180" y="252" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">pass_done can raise an interrupt</text>
+<text x="1180" y="266" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">(or the host polls STATUS).</text>
+<text x="1180" y="280" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">4. The host reads the newest</text>
+<text x="1180" y="294" font-size="10" text-anchor="start" font-weight="normal" font-style="normal">generation by C2H DMA.</text>
+<line x1="40" y1="846" x2="1320" y2="846" stroke="#2F5597" stroke-width="0.6"/>
+<rect x="40" y="857" width="22" height="12" rx="0" fill="#ffffff" stroke="#2F5597" stroke-width="1.2"/>
+<text x="68" y="867" font-size="11" text-anchor="start" font-weight="normal" font-style="normal">aclk: AXI side</text>
+<rect x="172" y="857" width="22" height="12" rx="0" fill="#DEEBF7" stroke="#2F5597" stroke-width="1.2"/>
+<text x="200" y="867" font-size="11" text-anchor="start" font-weight="normal" font-style="normal">eclk: engine</text>
+<rect x="293" y="857" width="22" height="12" rx="0" fill="url(#cdc_e)" stroke="#2F5597" stroke-width="1.2"/>
+<text x="321" y="867" font-size="11" text-anchor="start" font-weight="normal" font-style="normal">clock-domain crossing (async FIFO, dual-clock RAM, toggle handshake)</text>
+<text x="40" y="890" font-size="11" text-anchor="start" font-weight="normal" font-style="normal">Solid arrows: data (AXI4, AXI4-Lite, AXI4-Stream and the external links); dashed: control and configuration.</text>
+<text x="700" y="890" font-size="11" text-anchor="start" font-weight="normal" font-style="normal">One pass: front buffer → frame reader → line buffer → window → rule → packer → FIFO → frame writer → back buffer.</text>
+</g></svg>
