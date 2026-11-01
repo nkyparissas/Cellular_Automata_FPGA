@@ -11,6 +11,9 @@ A starting point for any Xilinx board with a PCIe edge connector and on-board DD
 
 ## Adapting
 
+`boards/alinx_axau25/` is a worked example: the template completed for a board without Vivado board files (DDR4 controller set up by hand, PCIe reference-clock buffer and PERST#, pin constraints from the board's manuals).
+
+
 1. Edit the variables at the top of `bd_ca_xdma.tcl`: `part`, `board_part` (with board files, PCIe and DDR pins come from board automation), `pcie_lanes`, `pcie_gen`, `ddr_interface`, `eclk_mhz`, `config`, `data_w`, `buf1_addr`.
 2. Boards with DDR3 or an MIG instead of the DDR4 IP: replace the `ddr4_0` cell and the `c0_ddr4_ui_clk` connection.
 3. Without board files: add the PCIe reference-clock buffer (`util_ds_buf`), `sys_rst_n`, and the board XDC.

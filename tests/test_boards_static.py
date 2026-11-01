@@ -168,3 +168,136 @@ def test_ooc_lenia_script():
                         "-y", "boards/ooc_lenia", "--top-module", "ooc_lenia_top", "boards/ooc_lenia/ooc_lenia_top.sv"],
                        cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+# ------------------------------------------------------------ ALINX AXAU25
+AXAU25 = ROOT / "boards" / "alinx_axau25"
+XDC_SET = re.compile(r"set_property\s+(?:-dict\s+\{(?P<dict>[^}]*)\}|(?P<key>\S+)\s+(?P<val>\S+))"
+                     r"\s+\[get_ports\s+(?P<ports>\{[^}]*\}|[^\]\s]+)\]")
+
+
+def xdc_pins(xdc: str) -> dict[str, tuple[str, str | None]]:
+    """Port -> (package pin, I/O standard or None) from an XDC file; I/O standards may
+    name ports with Vivado wildcards (*)."""
+    sets = []
+    for m in XDC_SET.finditer(xdc):
+        props = dict(zip(*[iter(m["dict"].split())] * 2)) if m["dict"] else {m["key"]: m["val"]}
+        sets.append((props, m["ports"].strip("{}").split()))
+    pins = {}
+    for props, ports in sets:
+        if "PACKAGE_PIN" in props:
+            assert len(ports) == 1 and ports[0] not in pins, f"{ports} placed twice or together"
+            pins[ports[0]] = props["PACKAGE_PIN"]
+    std = {}
+    for props, patterns in sets:
+        if "IOSTANDARD" in props:
+            for pat in patterns:
+                rx = ".*".join(map(re.escape, pat.split("*")))
+                hits = [p for p in pins if re.fullmatch(rx, p)]
+                assert hits, f"IOSTANDARD pattern {pat} matches no placed port"
+                std.update({p: props["IOSTANDARD"] for p in hits})
+    return {p: (pin, std.get(p)) for p, pin in pins.items()}
+
+
+def axau25_ddr4_ports() -> set[str]:
+    bits = {"adr": 17, "dq": 16, "dqs_t": 2, "dqs_c": 2, "dm_n": 2, "ba": 2, "bg": 1, "ck_t": 1, "ck_c": 1,
+            "cke": 1, "cs_n": 1, "odt": 1}
+    return {f"c0_ddr4_{s}[{i}]" for s, n in bits.items() for i in range(n)} | {"c0_ddr4_act_n", "c0_ddr4_reset_n"}
+
+
+def test_axau25_constraints():
+    """Every external pin of the AXAU25 design is placed exactly once, on a distinct
+    package pin, as in the ALINX user manuals (ACAU25 V1.0 Tables 2.3.1 and 2.4.2,
+    AXAU25 V1.0 Tables 3.3.1 and 3.11.1)."""
+    xdc = (AXAU25 / "axau25.xdc").read_text()
+    pins = xdc_pins(xdc)
+    used = [pin for pin, _ in pins.values()]
+    assert len(used) == len(set(used)), sorted({p for p in used if used.count(p) > 1})
+    expected = axau25_ddr4_ports() | {"sys_clk_200_clk_p", "sys_clk_200_clk_n", "pcie_refclk_clk_p",
+                                      "pcie_refclk_clk_n", "pcie_perstn", "led_ddr_calib", "led_pcie_link"}
+    assert set(pins) == expected, (sorted(expected - set(pins)), sorted(set(pins) - expected))
+    manual = {"sys_clk_200_clk_p": "T24", "sys_clk_200_clk_n": "U24", "pcie_refclk_clk_p": "AB7",
+              "pcie_refclk_clk_n": "AB6", "pcie_perstn": "T19", "led_ddr_calib": "W21", "led_pcie_link": "AC16",
+              "c0_ddr4_adr[0]": "G25", "c0_ddr4_adr[13]": "H24", "c0_ddr4_adr[14]": "K26",   # A14 = WE_B
+              "c0_ddr4_adr[15]": "H22", "c0_ddr4_adr[16]": "H21",                            # CAS_B, RAS_B
+              "c0_ddr4_dq[0]": "F23", "c0_ddr4_dq[8]": "M20", "c0_ddr4_dq[15]": "K21", "c0_ddr4_dqs_t[0]": "D23",
+              "c0_ddr4_dqs_c[1]": "L19", "c0_ddr4_dm_n[1]": "L18", "c0_ddr4_odt[0]": "M24", "c0_ddr4_reset_n": "G24"}
+    for port, pin in manual.items():
+        assert pins[port][0] == pin, f"{port}: {pins[port][0]}, manual {pin}"
+    for port in ("pcie_perstn", "led_ddr_calib", "led_pcie_link"):    # 1.8 V banks 64 and 65
+        assert pins[port][1] == "LVCMOS18", port
+    assert pins["pcie_refclk_clk_p"][1] is None                       # GT reference clock
+    assert all(pins[p][1] for p in axau25_ddr4_ports()), "every DDR4 pin needs its I/O standard"
+    for key in ("CONFIG_VOLTAGE 1.8", "CONFIG_MODE SPIx4", "BITSTREAM.CONFIG.SPI_BUSWIDTH 4",
+                "BITSTREAM.GENERAL.COMPRESS TRUE"):
+        assert f"set_property {key} [current_design]" in xdc, key
+    assert re.search(r"create_clock\s+-period\s+10\.000\s+-name\s+pcie_refclk\s+\[get_ports\s+pcie_refclk_clk_p\]", xdc)
+
+
+def dry_run_vivado_script(script: Path, argv=()) -> list[list[str]]:
+    """Run a Vivado Tcl script in a plain Tcl interpreter: every Vivado command is
+    recorded and returns an empty string (get_* commands return the object name they
+    were given), and only python3 subprocesses really run. Catches Tcl syntax errors,
+    misspelt variables and missing files."""
+    tkinter = pytest.importorskip("tkinter")
+    tcl = tkinter.Tcl()
+    tcl.eval("rename exec _exec; proc exec {args} { if {[lindex $args 0] eq {python3}} { return [_exec {*}$args] }; return {} }")
+    tcl.eval("set ::calls {}; proc unknown {args} { lappend ::calls $args; "
+             "if {[string match get_* [lindex $args 0]]} { return [lindex $args end] }; return {} }")
+    tcl.call("set", "argv", tcl.call("list", *argv))
+    tcl.call("set", "argc", len(argv))
+    tcl.call("source", str(script))
+    return [list(tcl.splitlist(c)) for c in tcl.splitlist(tcl.eval("set ::calls"))]
+
+
+def bd_properties(calls, cell: str) -> dict[str, str]:
+    """CONFIG.* values set on a block-design cell with set_property -dict."""
+    out = {}
+    for c in calls:
+        if c[:2] == ["set_property", "-dict"] and len(c) == 4:
+            kv = c[2].split() if " " in c[2] else []
+            if kv and cell in c[3]:
+                out.update(zip(kv[0::2], kv[1::2]))
+    return out
+
+
+@pytest.mark.parametrize("core_aclk", ["0", "125"])
+def test_axau25_build_script_dry_run(core_aclk):
+    """build.tcl runs through in a plain Tcl interpreter with stub Vivado commands (with the
+    core's AXI side on the XDMA user clock and on its own clock), configures the IP for the
+    board, exports only the ports the XDC places, and ends with a bitstream and a flash image."""
+    calls = dry_run_vivado_script(AXAU25 / "build.tcl", ["configs/lenia_orbium.json", core_aclk])
+    names = [c[0] for c in calls]
+    assert ["create_project", "ca_axau25"] == calls[names.index("create_project")][:2]
+    assert any(c[0] == "create_project" and "xcau25p-ffvb676-2-i" in c for c in calls)
+    cells = {c[-1]: c[c.index("-vlnv") + 1] for c in calls if c[0] == "create_bd_cell" and "-vlnv" in c}
+    for ip in ("xdma", "ddr4", "smartconnect", "clk_wiz", "util_ds_buf", "proc_sys_reset"):
+        assert any(v.split(":")[2] == ip for v in cells.values()), ip
+    xdma = bd_properties(calls, "xdma_0")
+    assert xdma["CONFIG.pl_link_cap_max_link_width"] == "X4" and xdma["CONFIG.pl_link_cap_max_link_speed"] == "8.0_GT/s"
+    assert xdma["CONFIG.axi_data_width"] == "128_bit" and xdma["CONFIG.select_quad"] == "GTY_Quad_224"
+    ddr = bd_properties(calls, "ddr4_0")
+    assert ddr["CONFIG.C0.DDR4_MemoryPart"] == "MT40A512M16LY-062E" and ddr["CONFIG.C0.DDR4_DataWidth"] == "16"
+    assert ddr["CONFIG.C0.DDR4_AxiDataWidth"] == "128" and ddr["CONFIG.C0.DDR4_InputClockPeriod"] == "5000"
+    assert ddr["CONFIG.C0.DDR4_TimePeriod"] == "833" and ddr["CONFIG.C0.DDR4_AxiSelection"] == "true"
+    smc_mem = bd_properties(calls, "smc_mem")
+    assert smc_mem["CONFIG.NUM_CLKS"] == ("2" if core_aclk == "0" else "3")
+    assert any(c[:3] == ["set_property", "range", "64K"] and "SEG_ca_core_reg0" in c[3] for c in calls)
+    # Exported ports: exactly what axau25.xdc places (the GT lanes are placed by the XDMA IP).
+    ports = {c[-1] for c in calls if c[0] in ("create_bd_port", "create_bd_intf_port")}
+    assert ports == {"pcie_refclk", "pcie_mgt", "pcie_perstn", "sys_clk_200", "c0_ddr4", "led_ddr_calib",
+                     "led_pcie_link"}
+    owner = {p: [q for q in ports if p == q or p.startswith(q + "_")] for p in xdc_pins((AXAU25 / "axau25.xdc").read_text())}
+    assert all(len(o) == 1 for o in owner.values()), {p: o for p, o in owner.items() if len(o) != 1}
+    assert {o[0] for o in owner.values()} == ports - {"pcie_mgt"}
+    assert any(c[0] == "launch_runs" and "impl_1" in c and "write_bitstream" in c for c in calls)
+    assert any(c[0] == "write_cfgmem" and "SPIx4" in c for c in calls)
+    out = ROOT / "build" / "alinx_axau25"
+    assert re.search(r"`define CA_DATA_W\s+128\b", (out / "ca_cfg.vh").read_text())
+    groups = (out / "clocks.xdc").read_text()
+    assert groups.count("-group") == (2 if core_aclk == "0" else 3)
+    assert any(c[:3] == ["set_property", "USED_IN_SYNTHESIS", "false"] and c[3].endswith("clocks.xdc") for c in calls)
+    r = subprocess.run(["verilator", "--lint-only", "-Wall", "--timing", "rtl/lint.vlt", "-f", "rtl/files.f",
+                        f"+incdir+{out}", "--top-module", "ca_core_xdma", "boards/xdma_template/ca_core_xdma.v"],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr

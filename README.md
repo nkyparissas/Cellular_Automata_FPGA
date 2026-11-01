@@ -10,6 +10,7 @@ A portable SystemVerilog framework for simulating cellular automata with large n
 | Rules | Hodgepodge machine, Greenberg-Hastings, interval rule (Artificial Physics), Lenia (one programmable weight per distance class, host-driven growth table); masks: square, von Neumann, legacy circle, legacy Artificial Physics |
 | Display variant (`boards/nexys4ddr/`) | system simulated; board top lints against IP stubs; Vivado flow unverified |
 | PCIe variant (`boards/xdma_template/`) | generic template; the Verilog module reference lints and elaborates under slang; block-design script unverified |
+| ALINX AXAU25 PCIe card (`boards/alinx_axau25/`) | complete XDMA design for the board, written from its user manuals; the pins are checked against the manuals and the build script is dry-run in the tests; Vivado flow and hardware unverified |
 | Host software (`host/ca_host/`) | XDMA, UART and simulated transports, controller, viewer and CLI; tested against the simulated device and fake device nodes |
 | Legacy VHDL | reviewed and co-simulated in GHDL; findings in `docs/legacy_vhdl_findings.md` |
 
@@ -36,7 +37,7 @@ PYTHONPATH=host:model python3 -m ca_host.cli --transport sim --config configs/gh
 | `tests/` | `model`, `unit` (cocotb), `sim`, `core`, `host`, `legacy` and static checks |
 | `tools/` | configuration header generator, file-list generator, Verilator runner, full-size RTL experiment runner, Lenia seed composer |
 | `configs/`, `data/seeds/`, `data/patterns/` | experiment configurations, their seed images, and Lenia creatures (MIT, Lenia tutorial) |
-| `boards/` | `nexys4ddr` (display, UART, buttons) and `xdma_template` (PCIe) |
+| `boards/` | `nexys4ddr` (display, UART, buttons), `xdma_template` (PCIe), `alinx_axau25` (the template completed for the ALINX AXAU25 PCIe card) and `ooc_lenia` (timing of the Lenia datapath) |
 | `host/ca_host/` | host library and command-line viewer |
 | `docs/` | `docs/architecture.md`, `docs/register_map.md`, `docs/adding_a_rule.md`, `docs/verification.md`, `docs/legacy_vhdl_findings.md`, the design spec and the implementation plan |
 
@@ -139,7 +140,7 @@ On a PCIe card the host requests every pass through the `FRAME_REQ` register and
    ```
    vivado -mode batch -source boards/xdma_template/bd_ca_xdma.tcl
    ```
-   add the board constraints, then synthesise, implement and write the bitstream of `ca_xdma_bd_wrapper`. `boards/xdma_template/README.md` lists the details.
+   add the board constraints, then synthesise, implement and write the bitstream of `ca_xdma_bd_wrapper`. `boards/xdma_template/README.md` lists the details. For the ALINX AXAU25 card, `boards/alinx_axau25/build.tcl` does all of this, down to the bitstream and the QSPI flash image (`boards/alinx_axau25/README.md`).
 2. **Program** the card, reboot or rescan the PCIe bus, and load the XDMA Linux driver from Xilinx's `dma_ip_drivers` repository. The driver creates `/dev/xdma0_user` (registers) and `/dev/xdma0_h2c_0`, `/dev/xdma0_c2h_0` (DMA, where the file offset is the DDR address); the user running the host needs read and write access to them.
 3. **Upload the grid and run:**
    ```

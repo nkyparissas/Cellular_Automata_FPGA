@@ -44,7 +44,7 @@ The Lenia rule (`rtl/rules/ca_rule_lenia.sv`) keeps one cell per cycle by groupi
 The controller starts a pass when RUN is set and a frame request is pending, from the `FRAME_REQ` register (host doorbell) or the consumer's `frame_req` input. It commits one generation every `FRAME_REPEAT+1` requested passes and can run `GENS_PER_FRAME-1` extra passes without streaming (fast-forward). See `docs/register_map.md`.
 
 * Display boards: `rtl/top/ca_display_system.sv` combines the core with `rtl/consumers/ca_video_out.sv` (async FIFO, video timing, palette, frame request in vertical blanking), the UART bridge (`rtl/io/ca_uart_bridge.sv`) and the buttons (`rtl/io/ca_buttons_axil.sv`) behind pulp `axi_mux` and `axi_lite_mux`. `boards/nexys4ddr/` adds only clocks, the DDR2 MIG and pins.
-* PCIe hosts: `boards/xdma_template/` instantiates the core next to XDMA in memory-mapped mode; the host moves frames by DMA and requests passes through the register file.
+* PCIe hosts: `boards/xdma_template/` instantiates the core next to XDMA in memory-mapped mode; the host moves frames by DMA and requests passes through the register file. `boards/alinx_axau25/` completes the template for the ALINX AXAU25 card (Artix UltraScale+ XCAU25P, PCIe Gen3 x4, DDR4 x16).
 
 ![The CA system with the display consumer, UART and buttons](figures/system_display.png)
 
