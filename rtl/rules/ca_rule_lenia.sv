@@ -9,9 +9,11 @@
 // with input, product and output registers, an adder tree over the products,
 // a two-step shift and a saturation stage, the table RAM with an output
 // register, and the update. The class weights form a shift chain loaded while
-// the core is idle (kern_valid_i shifts once: w[c] <= w[c+1], w[C-1] <= data),
-// so each weight register sits next to its multiplier and is static during
-// passes. sel_i (active bank and SH) is static during a pass.
+// the core is idle (each kern_valid_i word shifts it once: w[c] <= w[c+1],
+// w[C-1] <= data), so each weight register sits next to its multiplier and is
+// static during passes. The shift travels down the chain one class per cycle
+// and reaches class 0 C cycles after the word (kern_done_o), so that no enable
+// is shared along the chain. sel_i (active bank and SH) is static during a pass.
 module ca_rule_lenia #(
   parameter int unsigned N           = 27,
   parameter int unsigned CELL_W      = 16,
@@ -26,6 +28,7 @@ module ca_rule_lenia #(
   input  logic                            vld_i,
   input  logic                            kern_valid_i,
   input  logic [WEIGHT_W-1:0]             kern_data_i,
+  output logic                            kern_done_o,   // a word's shift has reached class 0
   input  logic                            gt_clk_i,
   input  logic                            gt_we_i,
   input  logic [LUT_IDX_W:0]              gt_addr_i,
@@ -149,14 +152,46 @@ module ca_rule_lenia #(
   end
 
   // -------------------------------------------- weight chain, multipliers
+  // The word and its valid bit are registered (d, v[C-1]); v[c] then marks the
+  // cycle in which class c shifts: w[c] takes the weight that class c+1 held
+  // before its own shift, kept in the hand-off register h[c+1]. Each valid bit
+  // thus enables only its own class, and words may follow each other in
+  // consecutive cycles. The chain is not reset: no shift enters in reset, and
+  // shifts in flight complete. Their kern_done_o pulses are dropped until C
+  // cycles after the reset (mute), so that the controller, whose count restarts
+  // at the reset, counts only the words presented after it.
+  localparam int unsigned MUW = $clog2(C + 1);
   logic [C-1:0][WEIGHT_W-1:0] w;
-  initial w = KERNEL_DEFAULT;
-  always_ff @(posedge clk_i) begin
-    if (rst_ni && kern_valid_i) begin   // no shift in reset (the chain itself is not reset)
-      for (int unsigned c = 0; c + 1 < C; c++) w[c] <= w[c+1];
-      w[C-1] <= kern_data_i;
-    end
+  logic [C-1:1][WEIGHT_W-1:0] h;
+  logic [WEIGHT_W-1:0]        d;
+  logic [C-1:0]               v;
+  logic [MUW-1:0]             mute;
+  initial begin
+    w = KERNEL_DEFAULT;
+    v = '0;
   end
+  always_ff @(posedge clk_i) begin
+    d <= kern_data_i;
+    v <= {rst_ni && kern_valid_i, v[C-1:1]};
+  end
+  always_ff @(posedge clk_i) begin
+    if (v[C-1]) begin
+      w[C-1] <= d;
+      h[C-1] <= w[C-1];
+    end
+    for (int unsigned c = 1; c + 1 < C; c++) begin
+      if (v[c]) begin
+        w[c] <= h[c+1];
+        h[c] <= w[c];
+      end
+    end
+    if (v[0]) w[0] <= h[1];
+  end
+  always_ff @(posedge clk_i) begin
+    if (!rst_ni)          mute <= MUW'(C);
+    else if (mute != '0)  mute <= mute - 1'b1;
+  end
+  assign kern_done_o = v[0] && mute == '0;
 
   logic [C-1:0][MW-1:0] prod;
   for (genvar c = 0; c < C; c++) begin : g_mul

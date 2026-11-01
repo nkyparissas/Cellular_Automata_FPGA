@@ -14,6 +14,7 @@ module tb_lenia #(
   input  logic                     vld_i,
   input  logic                     kern_valid_i,
   input  logic [WEIGHT_W-1:0]      kern_data_i,
+  output logic                     kern_done_o,
   input  logic                     gt_clk_i,
   input  logic                     gt_we_i,
   input  logic [LUT_IDX_W:0]       gt_addr_i,
@@ -24,6 +25,6 @@ module tb_lenia #(
 );
   ca_engine #(.N(N), .CELL_W(CELL_W), .RULE(ca_pkg::RULE_LENIA), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W),
               .KERNEL_DEFAULT(KERNEL_DEFAULT), .GROWTH_INIT(GROWTH_INIT)) i_engine (
-    .clk_i, .rst_ni, .col_i, .vld_i, .params_i('0), .kern_valid_i, .kern_data_i, .gt_clk_i, .gt_we_i,
+    .clk_i, .rst_ni, .col_i, .vld_i, .params_i('0), .kern_valid_i, .kern_data_i, .kern_done_o, .gt_clk_i, .gt_we_i,
     .gt_addr_i, .gt_data_i, .sel_i(ca_pkg::lenia_sel_t'(sel_i)), .cell_o, .vld_o);
 endmodule

@@ -19,10 +19,11 @@ module ooc_lenia_top #(
   input  logic [LUT_IDX_W:0]       gt_addr_i,
   input  logic [CELL_W:0]          gt_data_i,
   output logic [CELL_W-1:0]        cell_o,
-  output logic                     vld_o
+  output logic                     vld_o,
+  output logic                     kern_done_o
 );
   logic [N-1:0][CELL_W-1:0] col_q;
-  logic                     vld_q, kern_valid_q, gt_we_q, vld_e;
+  logic                     vld_q, kern_valid_q, gt_we_q, vld_e, kern_done_e;
   logic [WEIGHT_W-1:0]      kern_data_q;
   logic [6:0]               sel_q;
   logic [LUT_IDX_W:0]       gt_addr_q;
@@ -40,10 +41,12 @@ module ooc_lenia_top #(
       vld_q        <= 1'b0;
       kern_valid_q <= 1'b0;
       vld_o        <= 1'b0;
+      kern_done_o  <= 1'b0;
     end else begin
       vld_q        <= vld_i;
       kern_valid_q <= kern_valid_i;
       vld_o        <= vld_e;
+      kern_done_o  <= kern_done_e;
     end
   end
   always_ff @(posedge gt_clk_i) begin
@@ -54,6 +57,6 @@ module ooc_lenia_top #(
 
   ca_engine #(.N(N), .CELL_W(CELL_W), .RULE(ca_pkg::RULE_LENIA), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W)) i_engine (
     .clk_i, .rst_ni, .col_i(col_q), .vld_i(vld_q), .params_i('0), .kern_valid_i(kern_valid_q),
-    .kern_data_i(kern_data_q), .gt_clk_i, .gt_we_i(gt_we_q), .gt_addr_i(gt_addr_q), .gt_data_i(gt_data_q),
-    .sel_i(ca_pkg::lenia_sel_t'(sel_q)), .cell_o(cell_e), .vld_o(vld_e));
+    .kern_data_i(kern_data_q), .kern_done_o(kern_done_e), .gt_clk_i, .gt_we_i(gt_we_q), .gt_addr_i(gt_addr_q),
+    .gt_data_i(gt_data_q), .sel_i(ca_pkg::lenia_sel_t'(sel_q)), .cell_o(cell_e), .vld_o(vld_e));
 endmodule

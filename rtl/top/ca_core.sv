@@ -99,7 +99,7 @@ module ca_core #(
   logic [12:0]          gt_idx;
   logic [31:0]          lenia_wdata;
   // Lenia configuration path.
-  logic                 hold, kern_pending, growth_pending, kern_valid, gt_we;
+  logic                 hold, kern_pending, growth_pending, kern_valid, kern_done, gt_we;
   logic [WEIGHT_W-1:0]  kern_data;
   logic [LUT_IDX_W:0]   gt_addr;
   logic [CELL_W:0]      gt_data;
@@ -137,7 +137,7 @@ module ca_core #(
       .gen_count_i(gen_count), .hold_o(hold), .kern_pending_o(kern_pending), .growth_pending_o(growth_pending),
       .sh_inactive_o(sh_inactive), .growth_gen_o(growth_gen), .sel_o(a_sel), .gt_we_o(gt_we),
       .gt_addr_o(gt_addr), .gt_data_o(gt_data), .eclk_i, .erst_ni(e_rst_n), .kern_valid_o(kern_valid),
-      .kern_data_o(kern_data));
+      .kern_data_o(kern_data), .kern_done_i(kern_done));
     assign lenia_cfg = {11'b0, 5'(CELL_W + 1), 4'(LUT_IDX_W), 4'(WEIGHT_W), 8'(LC)};
   end else begin : g_no_lenia
     assign hold           = 1'b0;
@@ -153,7 +153,7 @@ module ca_core #(
     assign kern_data      = '0;
     assign lenia_cfg      = '0;
     logic unused_lenia;
-    assign unused_lenia = ^{active, kern_wr, gt_wr, sh_wr, commit_w, gt_idx, lenia_wdata};
+    assign unused_lenia = ^{active, kern_wr, gt_wr, sh_wr, commit_w, gt_idx, lenia_wdata, kern_done};
   end
 
   // The front buffer holds the current generation: read it, write the other.
@@ -200,8 +200,8 @@ module ca_core #(
   ca_engine #(.N(NBH), .CELL_W(CELL_W), .RULE(RULE), .MASK(MASK), .WEIGHT_W(WEIGHT_W), .LUT_IDX_W(LUT_IDX_W),
               .KERNEL_DEFAULT(KERNEL_DEFAULT), .GROWTH_INIT(GROWTH_INIT)) i_engine (
     .clk_i(eclk_i), .rst_ni(e_rst_n), .col_i(col), .vld_i(col_vld), .params_i(e_params),
-    .kern_valid_i(kern_valid), .kern_data_i(kern_data), .gt_clk_i(aclk_i), .gt_we_i(gt_we), .gt_addr_i(gt_addr),
-    .gt_data_i(gt_data), .sel_i(e_sel), .cell_o(new_cell), .vld_o(cell_vld));
+    .kern_valid_i(kern_valid), .kern_data_i(kern_data), .kern_done_o(kern_done), .gt_clk_i(aclk_i), .gt_we_i(gt_we),
+    .gt_addr_i(gt_addr), .gt_data_i(gt_data), .sel_i(e_sel), .cell_o(new_cell), .vld_o(cell_vld));
 
   ca_cell_packer #(.CELL_W(CELL_W), .DATA_W(DATA_W)) i_packer (
     .clk_i(eclk_i), .rst_ni(e_rst_n), .cell_i(new_cell), .vld_i(cell_vld), .word_o(word), .word_vld_o(word_vld));

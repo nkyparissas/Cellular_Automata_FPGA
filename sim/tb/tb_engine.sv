@@ -13,7 +13,8 @@ module tb_engine #(
   output logic [CELL_W-1:0]        cell_o,
   output logic                     vld_o
 );
+  logic unused_kern_done;   // Lenia only
   ca_engine #(.N(N), .CELL_W(CELL_W), .RULE(ca_pkg::rule_e'(RULE_ID)), .MASK(MASK)) i_engine (
-    .clk_i, .rst_ni, .col_i, .vld_i, .params_i, .kern_valid_i(1'b0), .kern_data_i('0),
+    .clk_i, .rst_ni, .col_i, .vld_i, .params_i, .kern_valid_i(1'b0), .kern_data_i('0), .kern_done_o(unused_kern_done),
     .gt_clk_i(clk_i), .gt_we_i(1'b0), .gt_addr_i('0), .gt_data_i('0), .sel_i('0), .cell_o, .vld_o);
 endmodule

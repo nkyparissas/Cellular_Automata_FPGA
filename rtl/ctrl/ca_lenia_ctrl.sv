@@ -2,8 +2,9 @@
 //   Kernel: KERNEL_DATA words are accepted while RUN is clear and no pass is
 //   busy, cross to eclk through an async FIFO and shift the weight chain of
 //   ca_rule_lenia once per word. KERNEL_PENDING compares the words accepted
-//   with a gray-coded count of the words already shifted (eclk -> aclk), so it
-//   clears only after the last shift; while it is set, hold_o stops pass starts.
+//   with a gray-coded count (eclk -> aclk) of the words whose shift has reached
+//   class 0 (kern_done_i, C cycles after the word), so it clears only after the
+//   last shift; while it is set, hold_o stops pass starts.
 //   Growth table: table and shift writes go to the inactive bank and are
 //   ignored while a commit is pending; the banks swap in any cycle in which no
 //   pass is running, GEN_COUNT is latched into GROWTH_GEN, and the active bank
@@ -46,10 +47,13 @@ module ca_lenia_ctrl #(
   input  logic                eclk_i,
   input  logic                erst_ni,
   output logic                kern_valid_o,
-  output logic [WEIGHT_W-1:0] kern_data_o
+  output logic [WEIGHT_W-1:0] kern_data_o,
+  input  logic                kern_done_i
 );
+  // Words accepted but not yet through the chain: at most KD in the FIFO, C in
+  // the chain and a few in the count's crossing, below 2^KCW = 4 * KD.
   localparam int unsigned KD  = C <= 4 ? 4 : (1 << $clog2(C));
-  localparam int unsigned KCW = $clog2(KD) + 1;
+  localparam int unsigned KCW = $clog2(KD) + 2;
 
   // ------------------------------------------------------------- kernel
   logic           kf_ready, kern_take;
@@ -64,7 +68,7 @@ module ca_lenia_ctrl #(
 
   always_ff @(posedge eclk_i) begin
     if (!erst_ni)          shifted_e <= '0;
-    else if (kern_valid_o) shifted_e <= shifted_e + 1'b1;
+    else if (kern_done_i)  shifted_e <= shifted_e + 1'b1;
   end
 
   ca_gray_xfer #(.W(KCW)) i_x_shifted (

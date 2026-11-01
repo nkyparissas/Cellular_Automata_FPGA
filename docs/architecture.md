@@ -28,7 +28,7 @@ The framework keeps the parallelisation of the original design: a grid-lines buf
 
 ![The Lenia CA Engine](figures/lenia_engine.png)
 
-The Lenia rule (`rtl/rules/ca_rule_lenia.sv`) keeps one cell per cycle by grouping the window cells into distance classes (cells with equal i^2 + j^2: 69 classes in a 27 x 27 window, 121 in 37 x 37). Every class is pre-added and multiplied once by its own weight register, the products are summed, the sum is shifted to index the active bank of a two-bank growth table, and the entry is added to the centre cell with saturation; every stage is registered for the 200 MHz engine clock. The weights form a shift chain loaded through `KERNEL_DATA` once per simulation, so each weight register sits next to its multiplier. `rtl/ctrl/ca_lenia_ctrl.sv` holds the kernel FIFO, the banks' shifts and the commit: the host writes the inactive bank, and the banks swap in a cycle in which no pass runs, so every pass uses one table and `GROWTH_GEN` records the switch (see `docs/register_map.md`).
+The Lenia rule (`rtl/rules/ca_rule_lenia.sv`) keeps one cell per cycle by grouping the window cells into distance classes (cells with equal i^2 + j^2: 69 classes in a 27 x 27 window, 121 in 37 x 37). Every class is pre-added and multiplied once by its own weight register, the products are summed, the sum is shifted to index the active bank of a two-bank growth table, and the entry is added to the centre cell with saturation; every stage is registered for the 200 MHz engine clock. The weights form a shift chain loaded through `KERNEL_DATA` once per simulation, so each weight register sits next to its multiplier; each word's shift travels down the chain one class per cycle, so that no enable signal spans the chain, and `KERNEL_PENDING` clears once the last shift has reached class 0. `rtl/ctrl/ca_lenia_ctrl.sv` holds the kernel FIFO, the banks' shifts and the commit: the host writes the inactive bank, and the banks swap in a cycle in which no pass runs, so every pass uses one table and `GROWTH_GEN` records the switch (see `docs/register_map.md`).
 
 ## Boundary modes
 
@@ -46,9 +46,10 @@ The controller starts a pass when RUN is set and a frame request is pending, fro
 * Display boards: `rtl/top/ca_display_system.sv` combines the core with `rtl/consumers/ca_video_out.sv` (async FIFO, video timing, palette, frame request in vertical blanking), the UART bridge (`rtl/io/ca_uart_bridge.sv`) and the buttons (`rtl/io/ca_buttons_axil.sv`) behind pulp `axi_mux` and `axi_lite_mux`. `boards/nexys4ddr/` adds only clocks, the DDR2 MIG and pins.
 * PCIe hosts: `boards/xdma_template/` instantiates the core next to XDMA in memory-mapped mode; the host moves frames by DMA and requests passes through the register file.
 
+
 ## Clocks and resets
 
-`aclk` runs the AXI side (registers, controller, reader, writer, line-buffer write port, consumer stream); `eclk` runs the engine. Resets are active low and synchronous; each domain synchronises the external reset with `rtl/common/ca_reset_sync.sv` (asserted from power-up), and only control and valid state is reset (data-path registers and delay lines are not). Rule parameters cross with a toggle handshake at pass start (`rtl/top/ca_params_cdc.sv`).
+`aclk` runs the AXI side (registers, controller, reader, writer, line-buffer write port, consumer stream); `eclk` runs the engine. Resets are active low and synchronous; each domain synchronises the external reset with `rtl/common/ca_reset_sync.sv` (asserted from power-up), and only control and valid state is reset (data-path registers and delay lines are not). The one exception is the shift wave of the Lenia weight chain: resetting its C valid bits would recreate a reset net that spans the chain, so a reset only stops new shifts from entering, the shifts in flight complete, and their done pulses are dropped for C cycles after the reset, so that the controller's word count, which restarts at the reset, stays exact. Rule parameters cross with a toggle handshake at pass start (`rtl/top/ca_params_cdc.sv`).
 
 ## Verification
 

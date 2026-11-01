@@ -12,8 +12,12 @@ PARAMS = {"C": 7, "WEIGHT_W": 6, "LUT_IDX_W": 4, "CELL_W": 8, "SH_DEFAULT": 3}
 STROBES = ("kern_wr_i", "gt_wr_i", "sh_wr_i", "commit_i")
 
 
-async def start(dut):
-    for s in STROBES + ("run_i", "busy_i", "active_i"):
+async def start(dut, done_lat=40, eclk_ns=7):
+    """Reset and clock the controller. A model of the weight chain answers every
+    word that leaves the kernel FIFO with a kern_done_i pulse done_lat eclk cycles
+    later (ca_rule_lenia: C cycles). Returns the words shifted and a list whose
+    only element counts the kern_done_i pulses."""
+    for s in STROBES + ("run_i", "busy_i", "active_i", "kern_done_i"):
         getattr(dut, s).value = 0
     dut.gt_idx_i.value = 0
     dut.wdata_i.value = 0
@@ -22,23 +26,28 @@ async def start(dut):
     dut.erst_ni.value = 0
     await Timer(1, unit="ns")       # inputs settle before the first clock edge
     Clock(dut.aclk_i, 10, unit="ns").start()
-    Clock(dut.eclk_i, 7, unit="ns").start()
+    Clock(dut.eclk_i, eclk_ns, unit="ns").start()
     for _ in range(3):
         await RisingEdge(dut.aclk_i)
     dut.arst_ni.value = 1
     dut.erst_ni.value = 1
     await RisingEdge(dut.aclk_i)
-    shifted = []
+    shifted, dones = [], [0]
 
     async def collect():
+        chain = [0] * done_lat
         while True:
             await RisingEdge(dut.eclk_i)
             await Timer(1, unit="ns")
-            if int(dut.kern_valid_o.value):
+            v = int(dut.kern_valid_o.value)
+            if v:
                 shifted.append(int(dut.kern_data_o.value))
+            chain = chain[1:] + [v]
+            dut.kern_done_i.value = chain[0]
+            dones[0] += chain[0]
 
     cocotb.start_soon(collect())
-    return shifted
+    return shifted, dones
 
 
 async def pulse(dut, strobe, wdata=0, idx=0):
@@ -62,7 +71,9 @@ def sel(dut):
 
 @cocotb.test()
 async def cocotb_kernel_accept_and_pending(dut):
-    shifted = await start(dut)
+    """KERNEL_PENDING (and hold_o) stay set until the last word's shift has reached
+    class 0 (kern_done_i), not merely until it has left the FIFO."""
+    shifted, dones = await start(dut)
     words = [5, 63, 0, 17, 42, 1, 33]
     for w in words:
         await pulse(dut, "kern_wr_i", w)
@@ -76,6 +87,7 @@ async def cocotb_kernel_accept_and_pending(dut):
         assert int(dut.hold_o.value) == 1
     assert not int(dut.kern_pending_o.value), "KERNEL_PENDING never cleared"
     assert shifted == words, f"pending cleared after {shifted}"
+    assert dones[0] == len(words), f"pending cleared after {dones[0]} of {len(words)} kern_done_i pulses"
     assert int(dut.hold_o.value) == 0
     for flag in ("run_i", "busy_i"):
         getattr(dut, flag).value = 1
@@ -83,6 +95,31 @@ async def cocotb_kernel_accept_and_pending(dut):
         await cycles(dut, 40)
         assert shifted == words and int(dut.kern_pending_o.value) == 0, f"word accepted with {flag} set"
         getattr(dut, flag).value = 0
+
+
+@cocotb.test()
+async def cocotb_kernel_pending_full_fifo_and_chain(dut):
+    """Words written faster than the slower engine clock takes them, with the chain's
+    real latency (C cycles): the FIFO fills while C words travel down the chain, and
+    KERNEL_PENDING still clears only after the last kern_done_i pulse."""
+    c = PARAMS["C"]
+    shifted, dones = await start(dut, done_lat=c, eclk_ns=23)
+    seen = []
+
+    async def watch():
+        while True:
+            await RisingEdge(dut.aclk_i)
+            await Timer(1, unit="ns")
+            seen.append((int(dut.kern_pending_o.value), dones[0]))
+
+    cocotb.start_soon(watch())
+    for k in range(4 * c):
+        await pulse(dut, "kern_wr_i", k % 64)
+    await cycles(dut, 40 * c)
+    assert dones[0] == len(shifted) > 2 * c, f"{dones[0]} kern_done_i pulses for {len(shifted)} words"
+    first = next(k for k, (p, _) in enumerate(seen) if p)
+    clear = next(k for k in range(first, len(seen)) if not seen[k][0])
+    assert seen[clear][1] == len(shifted), f"KERNEL_PENDING cleared after {seen[clear][1]} of {len(shifted)} words"
 
 
 @cocotb.test()
@@ -175,7 +212,7 @@ async def cocotb_reset_keeps_configuration(dut):
     assert (sel(dut), int(dut.sh_inactive_o.value)) == before
 
 
-@pytest.mark.parametrize("case", ["cocotb_kernel_accept_and_pending", "cocotb_growth_bank_and_commit",
-                                  "cocotb_reset_keeps_configuration"])
+@pytest.mark.parametrize("case", ["cocotb_kernel_accept_and_pending", "cocotb_kernel_pending_full_fifo_and_chain",
+                                  "cocotb_growth_bank_and_commit", "cocotb_reset_keeps_configuration"])
 def test_lenia_ctrl(case):
     run_cocotb("ca_lenia_ctrl", "test_lenia_ctrl", PARAMS, testcase=case)
