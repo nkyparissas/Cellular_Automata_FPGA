@@ -8,13 +8,14 @@ license: Apache-2.0
 repository-code: "https://github.com/nkyparissas/Cellular_Automata_FPGA"
 preferred-citation:
   type: article
-  title: "Large Scale Cellular Automata on FPGAs: A Generic Architecture and a Framework"
+  title: "Large-scale Cellular Automata on FPGAs: A New Generic Architecture and a Framework"
   authors:
     - family-names: Kyparissas
       given-names: Nikolaos
     - family-names: Dollas
       given-names: Apostolos
   journal: "ACM Transactions on Reconfigurable Technology and Systems"
+  doi: "10.1145/3423185"
   volume: 14
   issue: 1
   number: 5

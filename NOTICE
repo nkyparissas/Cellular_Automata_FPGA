@@ -11,9 +11,10 @@ This work originates from the following publications by Nikolaos Kyparissas
 and Apostolos Dollas. Derivative works and publications using this work must
 credit the author and cite them:
 
-1. N. Kyparissas and A. Dollas, "Large Scale Cellular Automata on FPGAs: A
-   Generic Architecture and a Framework", ACM Transactions on Reconfigurable
-   Technology and Systems, vol. 14, no. 1, Article 5, Dec. 2020.
+1. N. Kyparissas and A. Dollas, "Large-scale Cellular Automata on FPGAs: A
+   New Generic Architecture and a Framework", ACM Transactions on
+   Reconfigurable Technology and Systems, vol. 14, no. 1, Article 5, Dec.
+   2020. https://doi.org/10.1145/3423185
 2. N. Kyparissas and A. Dollas, "An FPGA-based Architecture to Simulate
    Cellular Automata with Large Neighborhoods in Real Time", in Proc. 29th
    International Conference on Field Programmable Logic and Applications
